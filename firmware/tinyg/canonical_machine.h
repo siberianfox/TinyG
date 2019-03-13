@@ -59,7 +59,8 @@ extern "C"{
  *
  *	 The gm core struct is copied and passed as context to the runtime where it is
  *	 used for planning, replanning, and reporting.
- *
+ *	 gm核心结构是复制和传递上下文到运行环境，被planning，replaning 和reporting所使用。
+ *   
  * - gmx is the extended gcode model variables that are only used by the canonical
  *	 machine and do not need to be passed further down.
  *
@@ -67,17 +68,22 @@ extern "C"{
  *   gcode block.It accepts data in the new gcode block in the formats
  *	 present in the block (pre-normalized forms). During initialization
  *	 some state elements are necessarily restored from gm.
- *
+ *   gn是用于g代码解释器且只为每一个g代码block重新初始化。它从新的g代码块中接收数据（格式化后的代码）。
+ *   在初始化阶段，一些状态需要重新从gm中读取。
+ * 
  * - gf is used by the gcode parser interpreter to hold flags for any data
  *	 that has changed in gn during the parse. cm.gf.target[] values are also used
  *	 by the canonical machine during set_target().
- *
+ *   gf是解析器用于保存在解析过程中一些gn内的参数发生改变的标志。cm.gf.target[]参数也被用于
+ *   set_target()过程中。 
+ * 
  * - cfg (config struct in config.h) is also used heavily and contains some
  *	 values that might be considered to be Gcode model values. The distinction
  *	 is that all values in the config are persisted and restored, whereas the
  *	 gm structs are transient. So cfg has the G54 - G59 offsets, but gm has the
  *	 G92 offsets. cfg has the power-on / reset gcode default values, but gm has
  *	 the operating state for the values (which may have changed).
+ * - cfg（config.h中的配置结构体）也用得非常频繁，用于保存一些可能被认为是G代码模型的参数。
  */
 typedef struct GCodeState {				// Gcode model state - used by model, planning and runtime
 	uint32_t linenum;					// Gcode block line number
@@ -185,7 +191,7 @@ typedef struct GCodeInput {				// Gcode model inputs - meaning depends on contex
 //	float cutter_radius;				// D - cutter radius compensation (0 is off)
 //	float cutter_length;				// H - cutter length compensation (0 is off)
 
-} GCodeInput_t;
+} GCodeInput_t;//这个结构体保存了输入的G代码类型和G代码参数
 
 /*****************************************************************************
  * CANONICAL MACHINE STRUCTURES
@@ -213,30 +219,30 @@ typedef struct cmSingleton {			// struct to manage cm globals and cycles
 
 	/**** Config variables (PUBLIC) ****/
 
-	// system group settings
+	//系统设置组 
 	float junction_acceleration;		// centripetal acceleration max for cornering
 	float chordal_tolerance;			// arc chordal accuracy setting in mm
 	uint8_t soft_limit_enable;
 
-	// hidden system settings
+	//隐藏系统设置 
 	float min_segment_len;				// line drawing resolution in mm
 	float arc_segment_len;				// arc drawing resolution in mm
 	float estd_segment_usec;			// approximate segment time in microseconds
 
-	// gcode power-on default settings - defaults are not the same as the gm state
+	// G代码上电默认设置 - 默认不是和gm state一样。
 	uint8_t coord_system;				// G10 active coordinate system default
 	uint8_t select_plane;				// G17,G18,G19 reset default
 	uint8_t units_mode;					// G20,G21 reset default
 	uint8_t path_control;				// G61,G61.1,G64 reset default
 	uint8_t distance_mode;				// G90,G91 reset default
 
-	// coordinate systems and offsets
+	// 坐标系统和偏移
 	float offset[COORDS+1][AXES];		// persistent coordinate offsets: absolute (G53) + G54,G55,G56,G57,G58,G59
 
-	// settings for axes X,Y,Z,A B,C
+	// 每个轴的设置 X,Y,Z,A,B,C
 	cfgAxis_t a[AXES];
 
-	/**** Runtime variables (PRIVATE) ****/
+	/**** 运行时变量(私有)****/
 
 	uint8_t combined_state;				// stat: combination of states for display purposes
 	uint8_t machine_state;				// macs: machine/cycle/motion is the actual machine state
@@ -261,8 +267,8 @@ typedef struct cmSingleton {			// struct to manage cm globals and cycles
 	/**** Model states ****/
 	GCodeState_t  gm;					// core gcode model state
 	GCodeStateX_t gmx;					// extended gcode model state
-	GCodeInput_t  gn;					// gcode input values - transient
-	GCodeInput_t  gf;					// gcode input flags - transient
+	GCodeInput_t  gn;					// G代码输入值（暂时）
+	GCodeInput_t  gf;					// G代码输入标志（暂时） 
 
 	magic_t magic_end;
 } cmSingleton_t;

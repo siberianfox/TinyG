@@ -59,117 +59,6 @@ static void _set_motor_power_level(const uint8_t motor, const float power_level)
 /**** Setup motate ****/
 
 #ifdef __ARM
-using namespace Motate;
-
-OutputPin<kGRBL_CommonEnablePinNumber> common_enable;	 // shorter form of the above
-OutputPin<kDebug1_PinNumber> dda_debug_pin1;
-OutputPin<kDebug2_PinNumber> dda_debug_pin2;
-OutputPin<kDebug3_PinNumber> dda_debug_pin3;
-
-// Example with prefixed name::
-//Motate::Timer<dda_timer_num> dda_timer(kTimerUpToMatch, FREQUENCY_DDA);// stepper pulse generation
-Timer<dda_timer_num> dda_timer(kTimerUpToMatch, FREQUENCY_DDA);			// stepper pulse generation
-Timer<dwell_timer_num> dwell_timer(kTimerUpToMatch, FREQUENCY_DWELL);	// dwell timer
-Timer<load_timer_num> load_timer;		// triggers load of next stepper segment
-Timer<exec_timer_num> exec_timer;		// triggers calculation of next+1 stepper segment
-
-// Motor structures
-template<pin_number step_num,			// Setup a stepper template to hold our pins
-		 pin_number dir_num,
-		 pin_number enable_num,
-		 pin_number ms0_num,
-		 pin_number ms1_num,
-		 pin_number ms2_num,
-		 pin_number vref_num>
-
-struct Stepper {
-	/* stepper pin assignments */
-
-	OutputPin<step_num> step;
-	OutputPin<dir_num> dir;
-	OutputPin<enable_num> enable;
-	OutputPin<ms0_num> ms0;
-	OutputPin<ms1_num> ms1;
-	OutputPin<ms2_num> ms2;
-	PWMOutputPin<vref_num> vref;
-
-	/* stepper default values */
-
-	// sets default pwm freq for all motor vrefs (comment line also sets HiZ)
-	Stepper(const uint32_t frequency = 500000) : vref(frequency) {};
-//	Stepper(const uint32_t frequency = 100000) : vref(kDriveLowOnly, frequency) {};
-
-	/* functions bound to stepper structures */
-
-	void setMicrosteps(const uint8_t microsteps)
-	{
-		switch (microsteps) {
-			case ( 1): { ms2=0; ms1=0; ms0=0; break; }
-			case ( 2): { ms2=0; ms1=0; ms0=1; break; }
-			case ( 4): { ms2=0; ms1=1; ms0=0; break; }
-			case ( 8): { ms2=0; ms1=1; ms0=1; break; }
-			case (16): { ms2=1; ms1=0; ms0=0; break; }
-			case (32): { ms2=1; ms1=0; ms0=1; break; }
-		}
-	};
-
-	void energize(const uint8_t motor)
-	{
-		if (st_cfg.mot[motor].power_mode != MOTOR_DISABLED) {
-			enable.clear();
-			st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_START;
-		}
-	};
-};
-
-Stepper<kSocket1_StepPinNumber,
-		kSocket1_DirPinNumber,
-		kSocket1_EnablePinNumber,
-		kSocket1_Microstep_0PinNumber,
-		kSocket1_Microstep_1PinNumber,
-		kSocket1_Microstep_2PinNumber,
-		kSocket1_VrefPinNumber> motor_1;
-
-Stepper<kSocket2_StepPinNumber,
-		kSocket2_DirPinNumber,
-		kSocket2_EnablePinNumber,
-		kSocket2_Microstep_0PinNumber,
-		kSocket2_Microstep_1PinNumber,
-		kSocket2_Microstep_2PinNumber,
-		kSocket2_VrefPinNumber> motor_2;
-
-Stepper<kSocket3_StepPinNumber,
-		kSocket3_DirPinNumber,
-		kSocket3_EnablePinNumber,
-		kSocket3_Microstep_0PinNumber,
-		kSocket3_Microstep_1PinNumber,
-		kSocket3_Microstep_2PinNumber,
-		kSocket3_VrefPinNumber> motor_3;
-
-Stepper<kSocket4_StepPinNumber,
-		kSocket4_DirPinNumber,
-		kSocket4_EnablePinNumber,
-		kSocket4_Microstep_0PinNumber,
-		kSocket4_Microstep_1PinNumber,
-		kSocket4_Microstep_2PinNumber,
-		kSocket4_VrefPinNumber> motor_4;
-
-Stepper<kSocket5_StepPinNumber,
-		kSocket5_DirPinNumber,
-		kSocket5_EnablePinNumber,
-		kSocket5_Microstep_0PinNumber,
-		kSocket5_Microstep_1PinNumber,
-		kSocket5_Microstep_2PinNumber,
-		kSocket5_VrefPinNumber> motor_5;
-
-Stepper<kSocket6_StepPinNumber,
-		kSocket6_DirPinNumber,
-		kSocket6_EnablePinNumber,
-		kSocket6_Microstep_0PinNumber,
-		kSocket6_Microstep_1PinNumber,
-		kSocket6_Microstep_2PinNumber,
-		kSocket6_VrefPinNumber> motor_6;
-
 #endif // __ARM
 
 /************************************************************************************
@@ -735,7 +624,7 @@ namespace Motate {	// Define timer inside Motate namespace
 #endif // __ARM
 
 /****************************************************************************************
- * _load_move() - Dequeue move and load into stepper struct
+ * _load_move() - 将移动命令出列，并将其载入Stepper结构。
  *
  *	This routine can only be called be called from an ISR at the same or
  *	higher level as the DDA or dwell ISR. A software interrupt has been

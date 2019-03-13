@@ -441,11 +441,11 @@ static stat_t _execute_gcode_block()
 	stat_t status = STAT_OK;
 
 	cm_set_model_linenum(cm.gn.linenum);
-	EXEC_FUNC(cm_set_feed_rate_mode, feed_rate_mode);
-	EXEC_FUNC(cm_set_feed_rate, feed_rate);
+	EXEC_FUNC(cm_set_feed_rate_mode, feed_rate_mode);//G93
+	EXEC_FUNC(cm_set_feed_rate, feed_rate);//F值
 	EXEC_FUNC(cm_feed_rate_override_factor, feed_rate_override_factor);
 	EXEC_FUNC(cm_traverse_override_factor, traverse_override_factor);
-	EXEC_FUNC(cm_set_spindle_speed, spindle_speed);
+	EXEC_FUNC(cm_set_spindle_speed, spindle_speed);//s主轴速度
 	EXEC_FUNC(cm_spindle_override_factor, spindle_override_factor);
 	EXEC_FUNC(cm_select_tool, tool_select);					// tool_select is where it's written
 	EXEC_FUNC(cm_change_tool, tool_change);

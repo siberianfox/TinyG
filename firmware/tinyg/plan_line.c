@@ -80,11 +80,9 @@ uint8_t mp_get_runtime_busy()
  *	Controlling jerk smooths transitions between moves and allows for faster feeds while
  *	controlling machine oscillations and other undesirable side-effects.
  *
- * 	Note All math is done in absolute coordinates using single precision floating point (float).
- *
- *	Note: Returning a status that is not STAT_OK means the endpoint is NOT advanced. So lines
- *	that are too short to move will accumulate and get executed once the accumulated error
- *	exceeds the minimums.
+ *  需要注意的是，所有的数学计算都是使用单精度浮点数在绝对坐标值的情况下进行的。
+ *	注意：返回的状态如果不是STAT_OK，意味着结束点不是符合要求的。因此太短而无法进行移动的线段将累计起来，并且
+ *  在超过最小值之后再执行。
  */
 /*
 #define axis_length bf->body_length
@@ -103,7 +101,7 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	float axis_length[AXES];
 	float axis_square[AXES];
 	float length_square = 0;
-
+	//计算需要移动的相对距离，以及相对距离的平方,以及总相对距离
 	for (uint8_t axis=0; axis<AXES; axis++) {
 		axis_length[axis] = gm_in->target[axis] - mm.position[axis];
 		axis_square[axis] = square(axis_length[axis]);
@@ -259,8 +257,11 @@ stat_t mp_aline(GCodeState_t *gm_in)
  */
 
 /*
- * _calc_move_times() - compute optimal and minimum move times into the gcode_state
+ * _calc_move_times() - 计算最佳和最小移动时间，并写入gcode_state。
+ * compute optimal and minimum move times into the gcode_state
  *
+ * "Minimum time",是在每个轴设定的速度下，可进行移动的最快速度。——不管请求的进给速率是多少。minimum time 是
+ *  轴所限制的时间。
  *	"Minimum time" is the fastest the move can be performed given the velocity constraints on each
  *	participating axis - regardless of the feed rate requested. The minimum time is the time limited
  *	by the rate-limiting axis. The minimum time is needed to compute the optimal time and is

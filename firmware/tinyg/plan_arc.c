@@ -32,7 +32,7 @@
 
 arc_t arc;
 
-// Local functions
+// static本地函数
 static stat_t _compute_arc(void);
 static stat_t _compute_arc_offsets_from_radius(void);
 static void _estimate_arc_time(void);
@@ -48,7 +48,7 @@ static void _estimate_arc_time(void);
  */
 
 /*
- * cm_arc_init() - initialize arc structures
+ * cm_arc_init() -初始化结构体。 
  */
 void cm_arc_init()
 {

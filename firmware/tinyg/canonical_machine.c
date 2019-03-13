@@ -110,13 +110,15 @@ extern "C"{
  **** STRUCTURE ALLOCATIONS ********************************************************
  ***********************************************************************************/
 
-cmSingleton_t cm;		// canonical machine controller singleton
+cmSingleton_t cm;		// 一个核心结构体。保存了当前运行的状态，包括坐标平面的选择。每个坐标轴的设置，
+//系统设置（拐角速度，软限位开关）。还有当前G代码解析状态。
+//canonical machine controller singleton
 
 /***********************************************************************************
  **** GENERIC STATIC FUNCTIONS AND VARIABLES ***************************************
  ***********************************************************************************/
 
-// command execution callbacks from planner queue
+// 从planner队列中执行回调。
 static void _exec_offset(float *value, float *flag);
 static void _exec_change_tool(float *value, float *flag);
 static void _exec_select_tool(float *value, float *flag);
@@ -228,28 +230,26 @@ void cm_set_model_linenum(uint32_t linenum)
 /*
  * Notes on Coordinate System and Offset functions
  *
- * All positional information in the canonical machine is kept as absolute coords and in
- *	canonical units (mm). The offsets are only used to translate in and out of canonical form
- *	during interpretation and response.
- *
- * Managing the coordinate systems & offsets is somewhat complicated. The following affect offsets:
- *	- coordinate system selected. 1-9 correspond to G54-G59
- *	- absolute override: forces current move to be interpreted in machine coordinates: G53 (system 0)
+ * 所有保存在canonical_machine的位置信息都是以相对绝对坐标值来保存的（单位mm）,而偏移(offsets)只是
+ * 用来在执行和反应的时候进行转换。
+ * 管理坐标系统和偏移有些复杂。以下的因素都会影响到偏移：
+ *	- 坐标系统选择，1-9(G54-G59)。
+ *  - 绝对坐标模式启用：强制当前的移动被解释为以机械坐标为参考。G53
  *	- G92 offsets are added "on top of" the coord system offsets -- if origin_offset_enable == true
  *	- G28 and G30 moves; these are run in absolute coordinates
  *
- * The offsets themselves are considered static, are kept in cm, and are supposed to be persistent.
+ *   偏移本身被认为是静态的，并保存在cm结构里面。and are supposed to be persistent.
  *
- * To reduce complexity and data load the following is done:
+ * 为了减少复杂度和数据加载，应用了一下的方法：
  *	- Full data for coordinates/offsets is only accessible by the canonical machine, not the downstream
  *	- A fully resolved set of coord and G92 offsets, with per-move exceptions can be captured as "work_offsets"
  *	- The core gcode context (gm) only knows about the active coord system and the work offsets
  */
 
 /*
- * cm_get_active_coord_offset() - return the currently active coordinate offset for an axis
+ * cm_get_active_coord_offset() - 为每个坐标轴返回当前起作用的坐标偏移。
  *
- *	Takes G5x, G92 and absolute override into account to return the active offset for this move
+ *	考虑包含G5x、G92和绝对坐标模式，并返回该偏移量。
  *
  *	This function is typically used to evaluate and set offsets, as opposed to cm_get_work_offset()
  *	which merely returns what's in the work_offset[] array.
@@ -257,10 +257,10 @@ void cm_set_model_linenum(uint32_t linenum)
 
 float cm_get_active_coord_offset(uint8_t axis)
 {
-	if (cm.gm.absolute_override == true) return (0);		// no offset if in absolute override mode
+	if (cm.gm.absolute_override == true) return (0);		// 如果处于强制绝对坐标模式，则偏移不生效。
 	float offset = cm.offset[cm.gm.coord_system][axis];
 	if (cm.gmx.origin_offset_enable == true)
-		offset += cm.gmx.origin_offset[axis];				// includes G5x and G92 components
+		offset += cm.gmx.origin_offset[axis];				// 包括G5X和G92部分。
 	return (offset);
 }
 
@@ -439,6 +439,7 @@ void cm_set_model_target(float target[], float flag[])
 			continue;		// skip axis if not flagged for update or its disabled
 		} else if ((cm.a[axis].axis_mode == AXIS_STANDARD) || (cm.a[axis].axis_mode == AXIS_INHIBITED)) {
 			if (cm.gm.distance_mode == ABSOLUTE_MODE) {
+				//计算坐标系统的偏移量
 				cm.gm.target[axis] = cm_get_active_coord_offset(axis) + _to_millimeters(target[axis]);
 			} else {
 				cm.gm.target[axis] += _to_millimeters(target[axis]);

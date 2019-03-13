@@ -175,8 +175,8 @@ typedef struct mpBuffer {			// See Planning Velocity Notes for variable usage
 } mpBuf_t;
 
 typedef struct mpBufferPool {		// ring buffer for sub-moves
-	magic_t magic_start;			// magic number to test memory integrity
-	uint8_t buffers_available;		// running count of available buffers
+	magic_t magic_start;			// 用于测试内存完整性的magic number。
+	uint8_t buffers_available;		// 有多少buffer可以使用。running count of available buffers
 	mpBuf_t *w;						// get_write_buffer pointer
 	mpBuf_t *q;						// queue_write_buffer pointer
 	mpBuf_t *r;						// get/end_run_buffer pointer
@@ -264,64 +264,64 @@ extern mpMoveRuntimeSingleton_t mr;		// context for line runtime
  * Global Scope Functions
  */
 
-void planner_init(void);
-void planner_init_assertions(void);
-stat_t planner_test_assertions(void);
+void planner_init(void); //main.c planner.c 
+void planner_init_assertions(void); //planner.c
+stat_t planner_test_assertions(void);//planner.c
 
-void mp_flush_planner(void);
-void mp_set_planner_position(uint8_t axis, const float position);
-void mp_set_runtime_position(uint8_t axis, const float position);
-void mp_set_steps_to_runtime_position(void);
+void mp_flush_planner(void);//cycle_homing.c cycle_jogging.c cycle_probing.c planner.c
+void mp_set_planner_position(uint8_t axis, const float position);//planner.c canonical_machine.c
+void mp_set_runtime_position(uint8_t axis, const float position);//planner.c canonical_machine.c
+void mp_set_steps_to_runtime_position(void);//stepper.c canonical_machine.c planner.c
 
-void mp_queue_command(void(*cm_exec_t)(float[], float[]), float *value, float *flag);
-stat_t mp_runtime_command(mpBuf_t *bf);
+void mp_queue_command(void(*cm_exec_t)(float[], float[]), float *value, float *flag);////stepper.c canonical_machine.c spildle.c
+stat_t mp_runtime_command(mpBuf_t *bf);//stepper.c  planner.c
 
-stat_t mp_dwell(const float seconds);
-void mp_end_dwell(void);
+stat_t mp_dwell(const float seconds);//canonical_machiec.c planner.c 
+void mp_end_dwell(void);//canonical_machine.c planner.c 
 
-stat_t mp_aline(GCodeState_t *gm_in);
+stat_t mp_aline(GCodeState_t *gm_in); //canonical_machine.c plan_arc.c plan_line.c 
 
-stat_t mp_plan_hold_callback(void);
-stat_t mp_end_hold(void);
-stat_t mp_feed_rate_override(uint8_t flag, float parameter);
+stat_t mp_plan_hold_callback(void);//controler.c plan_line.c
+stat_t mp_end_hold(void);//canonical_machine.c plan_line.c
+stat_t mp_feed_rate_override(uint8_t flag, float parameter); //canonical_machine.c
 
-// planner buffer handlers
-uint8_t mp_get_planner_buffers_available(void);
-void mp_init_buffers(void);
-mpBuf_t * mp_get_write_buffer(void);
-void mp_unget_write_buffer(void);
-void mp_commit_write_buffer(const uint8_t move_type);
+// ****planner buffer handlers ****
+uint8_t mp_get_planner_buffers_available(void);//canonical_machine.c controller.c plan_arc.c planner.c report.c
+void mp_init_buffers(void);//planner.c 
+mpBuf_t * mp_get_write_buffer(void);//planner.c plan_line.c
+void mp_unget_write_buffer(void);//planner.c
+void mp_commit_write_buffer(const uint8_t move_type);//plan_line.c planner.c
 
-mpBuf_t * mp_get_run_buffer(void);
-uint8_t mp_free_run_buffer(void);
-mpBuf_t * mp_get_first_buffer(void);
-mpBuf_t * mp_get_last_buffer(void);
+mpBuf_t * mp_get_run_buffer(void);//planner.c plan_line.c planner.c
+uint8_t mp_free_run_buffer(void);//pan_exec.c planner.c
+mpBuf_t * mp_get_first_buffer(void);//plan_line.c planner.c
+mpBuf_t * mp_get_last_buffer(void);//planner.c plan_line.c
 
 //mpBuf_t * mp_get_prev_buffer(const mpBuf_t *bf);
 //mpBuf_t * mp_get_next_buffer(const mpBuf_t *bf);
-#define mp_get_prev_buffer(b) ((mpBuf_t *)(b->pv))	// use the macro instead
-#define mp_get_next_buffer(b) ((mpBuf_t *)(b->nx))
+#define mp_get_prev_buffer(b) ((mpBuf_t *)(b->pv))	// use the macro instead planner.c  plan_line.c
+#define mp_get_next_buffer(b) ((mpBuf_t *)(b->nx)) //planner.c plan_line.c
 
-void mp_clear_buffer(mpBuf_t *bf);
-void mp_copy_buffer(mpBuf_t *bf, const mpBuf_t *bp);
+void mp_clear_buffer(mpBuf_t *bf);//planner.c
+void mp_copy_buffer(mpBuf_t *bf, const mpBuf_t *bp);//planner.c plan_line.c
 
 // plan_line.c functions
-float mp_get_runtime_velocity(void);
-float mp_get_runtime_work_position(uint8_t axis);
-float mp_get_runtime_absolute_position(uint8_t axis);
-void mp_set_runtime_work_offset(float offset[]);
-void mp_zero_segment_velocity(void);
-uint8_t mp_get_runtime_busy(void);
-float* mp_get_planner_position_vector(void);
+float mp_get_runtime_velocity(void); //canonical_machine.c plan_line.c 
+float mp_get_runtime_work_position(uint8_t axis); //canonical_machine.c cycle_probe.c plan_line.c
+float mp_get_runtime_absolute_position(uint8_t axis); //canonical_machine.c plan_line.c
+void mp_set_runtime_work_offset(float offset[]); //plan_line.c canonical_machine.c
+void mp_zero_segment_velocity(void);//plan_line.c canonical_machine.c
+uint8_t mp_get_runtime_busy(void);//plan_line.c canonical_machine.c
+float* mp_get_planner_position_vector(void);//
 
 // plan_zoid.c functions
-void mp_calculate_trapezoid(mpBuf_t *bf);
-float mp_get_target_length(const float Vi, const float Vf, const mpBuf_t *bf);
-float mp_get_target_velocity(const float Vi, const float L, const mpBuf_t *bf);
+void mp_calculate_trapezoid(mpBuf_t *bf);//plan_zoid.c plan_line.c canonical_machinec
+float mp_get_target_length(const float Vi, const float Vf, const mpBuf_t *bf);//plan_line.c plan_zoid.c
+float mp_get_target_velocity(const float Vi, const float L, const mpBuf_t *bf);//plan_line.c plan_zoid.c 
 
 // plan_exec.c functions
-stat_t mp_exec_move(void);
-stat_t mp_exec_aline(mpBuf_t *bf);
+stat_t mp_exec_move(void); //kinematics.c plan_exec.c stepper.c 
+stat_t mp_exec_aline(mpBuf_t *bf); //plan_line.c plan_exec.c
 /*
 #ifdef __cplusplus
 }

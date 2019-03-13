@@ -82,8 +82,8 @@ void ik_kinematics(const float travel[], float steps[])
 		}
 	}
 */
-}
 
+}
 /*
  * _inverse_kinematics() - inverse kinematics - example is for a cartesian machine
  *

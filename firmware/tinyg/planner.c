@@ -68,9 +68,9 @@ extern "C"{
 */
 // Allocate planner structures
 
-mpBufferPool_t mb;				// move buffer queue
-mpMoveMasterSingleton_t mm;		// context for line planning
-mpMoveRuntimeSingleton_t mr;	// context for line runtime
+mpBufferPool_t mb;				// move buffer queue 移动buffer队列
+mpMoveMasterSingleton_t mm;		// context for line planning 规划状态,当前规划到哪里了
+mpMoveRuntimeSingleton_t mr;	// context for line runtime 
 
 /*
  * Local Scope Data and Functions
@@ -81,6 +81,7 @@ mpMoveRuntimeSingleton_t mr;	// context for line runtime
 #define flag_vector unit		// alias for vector of flags
 
 // execution routines (NB: These are all called from the LO interrupt)
+//回调函数，用于执行dwell（停留）和用户定义的功能函数。
 static stat_t _exec_dwell(mpBuf_t *bf);
 static stat_t _exec_command(mpBuf_t *bf);
 
@@ -117,12 +118,12 @@ stat_t planner_test_assertions()
 }
 
 /*
- * mp_flush_planner() - flush all moves in the planner and all arcs
+ * mp_flush_planner() - 清除所有planner中的移动和所有曲线。 
  *
- *	Does not affect the move currently running in mr.
- *	Does not affect mm or gm model positions
- *	This function is designed to be called during a hold to reset the planner
- *	This function should not generally be called; call cm_queue_flush() instead
+ *	不影响mr中当前正在运动的移动。
+ *	不影响mm或者gm模型中的位置(Position)。
+ *	这个函数是用来在进给保持（Hold）中进行调用来复位planner的。
+ *	这个函数不应该在普通时刻被调用。使用cm_queue_flush()进行替代。
  */
 void mp_flush_planner()
 {
@@ -145,9 +146,9 @@ void mp_flush_planner()
  *	frames. The scheme to keep this straight is:
  *
  *	 - mm.position	- start and end position for planning
- *	 - mr.position	- current position of runtime segment
- *	 - mr.target	- target position of runtime segment
- *	 - mr.endpoint	- final target position of runtime segment
+ *	 - mr.position	- 当前运行到的实际位置。
+ *	 - mr.target	- 目标位置。target position of runtime segment
+ *	 - mr.endpoint	- 最终目标。final target position of runtime segment
  *
  *	Note that position is set immediately when called and may not be not an accurate representation
  *	of the tool position. The motors are still processing the action and the real tool position is
@@ -160,7 +161,7 @@ void mp_set_runtime_position(uint8_t axis, const float position) { mr.position[a
 void mp_set_steps_to_runtime_position()
 {
 	float step_position[MOTORS];
-	ik_kinematics(mr.position, step_position);				// convert lengths to steps in floating point
+	ik_kinematics(mr.position, step_position);				// 将长度转换为脉冲数Step（浮点数格式）。
 	for (uint8_t motor = MOTOR_1; motor < MOTORS; motor++) {
 		mr.target_steps[motor] = step_position[motor];
 		mr.position_steps[motor] = step_position[motor];
@@ -174,15 +175,16 @@ void mp_set_steps_to_runtime_position()
 }
 
 /************************************************************************************
- * mp_queue_command() - queue a synchronous Mcode, program control, or other command
- * _exec_command() 	  - callback to execute command
+ * mp_queue_command() - 将一个同步M代码，程序控制或者其他命令入队到队列里。
+ * _exec_command() 	  - 执行命令的回调函数。
  *
  *	How this works:
- *	  - The command is called by the Gcode interpreter (cm_<command>, e.g. an M code)
- *	  - cm_ function calls mp_queue_command which puts it in the planning queue (bf buffer).
- *		This involves setting some parameters and registering a callback to the
- *		execution function in the canonical machine
- *	  - the planning queue gets to the function and calls _exec_command()
+ *  怎么工作的：
+ *    -命令是由G代码解析器调用的(cm_<command>，例如一个M代码)。
+ *    -cm_ 函数调用mp_queue_command 函数以将命令放到规划队列中(bf buffer)
+ *     这个包括设置一些参数以及注册回调函数。这些回调函数在canoncial_machine中的。
+ *    - 规划队列获得函数的指针，并调用_exec_command()来执行相应的函数（对应命令的函数）
+ *    - 防止指针到bf buffer中的。。。。。。
  *	  - ...which puts a pointer to the bf buffer in the prep stratuc (st_pre)
  *	  - When the runtime gets to the end of the current activity (sending steps, counting a dwell)
  *		if executes mp_runtime_command...
@@ -244,13 +246,15 @@ stat_t mp_dwell(float seconds)
 	if ((bf = mp_get_write_buffer()) == NULL)			// get write buffer or fail
 		return(cm_hard_alarm(STAT_BUFFER_FULL_FATAL));	// not ever supposed to fail
 
-	bf->bf_func = _exec_dwell;							// register callback to dwell start
+	bf->bf_func = _exec_dwell;							// 注册dwell开始的回调函数（本函数下面的那个）。
 	bf->gm.move_time = seconds;							// in seconds, not minutes
 	bf->move_state = MOVE_NEW;
 	mp_commit_write_buffer(MOVE_TYPE_DWELL);			// must be final operation before exit
 	return (STAT_OK);
 }
 
+//函数名称：执行停留
+//
 static stat_t _exec_dwell(mpBuf_t *bf)
 {
 	st_prep_dwell((uint32_t)(bf->gm.move_time * 1000000));// convert seconds to uSec
@@ -275,41 +279,39 @@ static stat_t _exec_dwell(mpBuf_t *bf)
  * the command is complete the run buffer is returned to the pool by freeing it.
  *
  * Notes:
- *	The write buffer pointer only moves forward on _queue_write_buffer, and
- *	the read buffer pointer only moves forward on free_read calls.
+ *	写buffer指针只会在调用mp_set_planner_position来移动，而读buffer指针只能通过free_read来进行移动
  *	(test, get and unget have no effect)
  *
- * mp_get_planner_buffers_available()   Returns # of available planner buffers
+ * mp_get_planner_buffers_available()  返回当前可以使用的buffer数量。
  *
- * mp_init_buffers()		Initializes or resets buffers
+ * mp_init_buffers()		初始化或者复位buffer.
  *
- * mp_get_write_buffer()	Get pointer to next available write buffer
- *							Returns pointer or NULL if no buffer available.
+ * mp_get_write_buffer()	获得指向下一个可以使用的写buffer的指针。
  *
- * mp_unget_write_buffer()	Free write buffer if you decide not to commit it.
+ * mp_unget_write_buffer()	释放写buffer，如果你决定不将它提交到队列中。
  *
- * mp_commit_write_buffer()	Commit the next write buffer to the queue
+ * mp_commit_write_buffer()	提交下一个写buffer到队列中。
  *							Advances write pointer & changes buffer state
  *							WARNING: The calling routine must not use the write buffer
  *							once it has been queued as it may be processed and freed (wiped)
  *							before mp_queue_write_buffer() returns.
  *
- * mp_get_run_buffer()		Get pointer to the next or current run buffer
+ * mp_get_run_buffer()		获得指向下一个或者是当前正在执行中的buffer。
  *							Returns a new run buffer if prev buf was ENDed
  *							Returns same buf if called again before ENDing
  *							Returns NULL if no buffer available
  *							The behavior supports continuations (iteration)
  *
- * mp_free_run_buffer()		Release the run buffer & return to buffer pool.
+ * mp_free_run_buffer()		释放run buffer，并返回到缓冲池。Release the run buffer & return to buffer pool.
  *							Returns true if queue is empty, false otherwise.
  *							This is useful for doing queue empty / end move functions.
  *
- * mp_get_prev_buffer(bf)	Returns pointer to prev buffer in linked list
- * mp_get_next_buffer(bf)	Returns pointer to next buffer in linked list
- * mp_get_first_buffer(bf)	Returns pointer to first buffer, i.e. the running block
- * mp_get_last_buffer(bf)	Returns pointer to last buffer, i.e. last block (zero)
- * mp_clear_buffer(bf)		Zeroes the contents of the buffer
- * mp_copy_buffer(bf,bp)	Copies the contents of bp into bf - preserves links
+ * mp_get_prev_buffer(bf)	返回链表中的前一个buffer的指针。
+ * mp_get_next_buffer(bf)	返回链表中的下一个buffer的指针。
+ * mp_get_first_buffer(bf)	返回指向第一个buffer的指针。
+ * mp_get_last_buffer(bf)	返回指向最后一个buffer的指针(也就是最后一个block（0）)。
+ * mp_clear_buffer(bf)		清除buffer中的内容。
+ * mp_copy_buffer(bf,bp)	复制bp中的内容到bf——保存连接。
  */
 
 uint8_t mp_get_planner_buffers_available(void) { return (mb.buffers_available);}
@@ -323,7 +325,7 @@ void mp_init_buffers(void)
 	mb.magic_start = MAGICNUM;
 	mb.magic_end = MAGICNUM;
 
-	mb.w = &mb.bf[0];				// init write and read buffer pointers
+	mb.w = &mb.bf[0];				// 初始化写和读指针，指向开头0
 	mb.q = &mb.bf[0];
 	mb.r = &mb.bf[0];
 	pv = &mb.bf[PLANNER_BUFFER_POOL_SIZE-1];
@@ -335,6 +337,9 @@ void mp_init_buffers(void)
 	mb.buffers_available = PLANNER_BUFFER_POOL_SIZE;
 }
 
+//函数名称：获取下一个可以写入的buffer指针
+//返回   ： NULL获取失败，已经没有可以获取的buffer
+//		   非NULL的指针，可以往里面写入规划信息的buffer
 mpBuf_t * mp_get_write_buffer() 				// get & clear a buffer
 {
 	if (mb.w->buffer_state == MP_BUFFER_EMPTY) {
@@ -353,6 +358,7 @@ mpBuf_t * mp_get_write_buffer() 				// get & clear a buffer
 	return (NULL);
 }
 
+//函数名称：恢复获得的写入buffer指针
 void mp_unget_write_buffer()
 {
 	mb.w = mb.w->pv;							// queued --> write
@@ -370,7 +376,7 @@ void mp_commit_write_buffer(const uint8_t move_type)
 	mb.q->move_state = MOVE_NEW;
 	mb.q->buffer_state = MP_BUFFER_QUEUED;
 	mb.q = mb.q->nx;							// advance the queued buffer pointer
-	qr_request_queue_report(+1);				// request a QR and add to the "added buffers" count
+	/*TODO:看懂这个什么意思*/qr_request_queue_report(+1);				// request a QR and add to the "added buffers" count
 	st_request_exec_move();						// requests an exec if the runtime is not busy
 												// NB: BEWARE! the exec may result in the planner buffer being
 												// processed immediately and then freed - invalidating the contents
