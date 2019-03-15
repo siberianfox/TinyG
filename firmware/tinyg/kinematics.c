@@ -43,6 +43,7 @@ extern "C"{
  *	Calls kinematics function(s).
  *	Performs axis mapping & conversion of length units to steps (and deals with inhibited axes)
  *
+ *  脉冲（steps）都以浮点数（float）形式返回（看起来应该使用uint32_t）是因为需要容纳浮点数的DDA Steps。。。。
  *	The reason steps are returned as floats (as opposed to, say, uint32_t) is to accommodate
  *	fractional DDA steps. The DDA deals with fractional step values as fixed-point binary in
  *	order to get the smoothest possible operation. Steps are passed to the move prep routine

@@ -54,15 +54,14 @@
  *	at rest. A convenience is provided in the ACTIVE_MODEL pointer to point to the right
  *	context.
  */
-/* --- Synchronizing command execution ---
+/* --- 同步命令执行---
  *
- *	Some gcode commands only set the MODEL state for interpretation of the current Gcode
- *	block. For example, cm_set_feed_rate(). This sets the MODEL so the move time is
- *	properly calculated for the current (and subsequent) blocks, so it's effected
- *	immediately.
+ *  一些G代码命令只在MODEL模型里面赋值，用于当前G代码块的解释。例如，cm_set_feed_rate()。这个
+ *  命令只把参数赋值到MODEL里面，然后便可以为当前的G代码块（和后面的）计算移动时间，因此它的影响
+ *  是立刻的。
  *
- *	"Synchronous commands" are commands that affect the runtime need to be synchronized
- *	with movement. Examples include G4 dwells, program stops and ends, and most M commands.
+ *	“同步命令”是那些影响运行时，需要跟随运动同步执行的命令。
+ *	例如包括G4、程序暂停和结束，以及许多的G代码。
  *	These are queued into the planner queue and execute from the queue. Synchronous commands
  *	work like this:
  *

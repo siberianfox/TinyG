@@ -133,9 +133,9 @@ void mp_flush_planner()
 }
 
 /*
- * mp_set_planner_position() - set planner position for a single axis
- * mp_set_runtime_position() - set runtime position for a single axis
- * mp_set_steps_to_runtime_position() - set encoder counts to the runtime position
+ * mp_set_planner_position() - 为单个轴设置规划器的位置。
+ * mp_set_runtime_position() - 为每个轴设置当前运行的位置。
+ * mp_set_steps_to_runtime_position() - 设置编码器计数到当前运行位置。set encoder counts to the runtime position
  *
  *	Since steps are in motor space you have to run the position vector through inverse
  *	kinematics to get the right numbers. This means that in a non-Cartesian robot changing

@@ -244,31 +244,31 @@ typedef struct cmSingleton {			// struct to manage cm globals and cycles
 
 	/**** 运行时变量(私有)****/
 
-	uint8_t combined_state;				// stat: combination of states for display purposes
+	uint8_t combined_state;				// 用于显示的状态组合。stat: combination of states for display purposes
 	uint8_t machine_state;				// macs: machine/cycle/motion is the actual machine state
-	uint8_t cycle_state;				// cycs
-	uint8_t motion_state;				// momo
-	uint8_t hold_state;					// hold: feedhold sub-state machine
-	uint8_t homing_state;				// home: homing cycle sub-state machine
-	uint8_t homed[AXES];				// individual axis homing flags
+	uint8_t cycle_state;				// 循环状态
+	uint8_t motion_state;				// 运动状态
+	uint8_t hold_state;					// hold：进给保持子状态机。
+	uint8_t homing_state;				// 归位：归位循环子状态机。
+	uint8_t homed[AXES];				// 各轴的归位标志。
 
-	uint8_t probe_state;				// 1==success, 0==failed
-	float probe_results[AXES];			// probing results
+	uint8_t probe_state;				// 1==成功，0==失败。
+	float probe_results[AXES];			// 对位结果。
 
-	uint8_t	g28_flag;					// true = complete a G28 move
-	uint8_t	g30_flag;					// true = complete a G30 move
-	uint8_t deferred_write_flag;		// G10 data has changed (e.g. offsets) - flag to persist them
-	uint8_t feedhold_requested;			// feedhold character has been received
-	uint8_t queue_flush_requested;		// queue flush character has been received
-	uint8_t cycle_start_requested;		// cycle start character has been received (flag to end feedhold)
+	uint8_t	g28_flag;					// true=完成了G28移动。
+	uint8_t	g30_flag;					// true=完成了G30移动。
+	uint8_t deferred_write_flag;		// G10数据已经改变（偏移量）-这个是用来保存它们的标志。
+	uint8_t feedhold_requested;			// 收到了进给保持的字符(命令)。
+	uint8_t queue_flush_requested;		// 收到了队列清除的字符（命令）。
+	uint8_t cycle_start_requested;		// 收到了循环开始的字符（命令），也就是接收进给保持的标志。
 	float jogging_dest;					// jogging direction as a relative move from current position
-	struct GCodeState *am;				// active Gcode model is maintained by state management
+	struct GCodeState *am;				// 活动中的G代码模型，由状态管理（state management）来维护。
 
-	/**** Model states ****/
-	GCodeState_t  gm;					// core gcode model state
-	GCodeStateX_t gmx;					// extended gcode model state
-	GCodeInput_t  gn;					// G代码输入值（暂时）
-	GCodeInput_t  gf;					// G代码输入标志（暂时） 
+	/**** 模型状态 Model states ****/
+	GCodeState_t  gm;					// 核心G代码模态。core gcode model state
+	GCodeStateX_t gmx;					// 扩展G代码模态。extended gcode model state
+	GCodeInput_t  gn;					// g代码输入值——临时变量。
+	GCodeInput_t  gf;					// g代码输入标志——临时变量。
 
 	magic_t magic_end;
 } cmSingleton_t;

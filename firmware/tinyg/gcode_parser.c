@@ -500,9 +500,9 @@ static stat_t _execute_gcode_block()
 			}
 		}
 	}
-	cm_set_absolute_override(MODEL, false);	 // un-set absolute override once the move is planned
+	cm_set_absolute_override(MODEL, false);	 // 一旦运动被规划好之后，取消绝对坐标设置。
 
-	// do the program stops and ends : M0, M1, M2, M30, M60
+	// 执行程序停止和结束:M0,M1,M2,M30,M60。
 	if (cm.gf.program_flow == true) {
 		if (cm.gn.program_flow == PROGRAM_STOP) {
 			cm_program_stop();

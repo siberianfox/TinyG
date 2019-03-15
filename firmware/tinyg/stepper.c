@@ -25,7 +25,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/* 	This module provides the low-level stepper drivers and some related functions.
+* 	This module provides the low-level stepper drivers and some related functions.
  *	See stepper.h for a detailed explanation of this module.
  */
 
@@ -1023,10 +1023,12 @@ static void _set_hw_microsteps(const uint8_t motor, const uint8_t microsteps)
 #endif // __AVR
 }
 
-
+/***********************************************************************************/
+/***********************************************************************************/
 /***********************************************************************************
  * CONFIGURATION AND INTERFACE FUNCTIONS
  * Functions to get and set variables from the cfgArray table
+ * 用于设置和获取cfg数组的功能函数。
  ***********************************************************************************/
 
 /* HELPERS

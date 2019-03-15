@@ -97,7 +97,7 @@ stat_t cm_arc_feed(float target[], float flags[],       // arc endpoints
     	arc.plane_axis_1 = AXIS_Y;
     	arc.linear_axis  = AXIS_Z;
         if (radius_f) {
-            if (!(target_x || target_y)) {                      // must have at least one endpoint specified
+            if (!(target_x || target_y)) {                      // 必须至少有一个结束点，在半径模式下。
         	    return (STAT_ARC_AXIS_MISSING_FOR_SELECTED_PLANE);
             }
         } else { // center format arc tests
