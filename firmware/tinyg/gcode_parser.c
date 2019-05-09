@@ -79,40 +79,40 @@ stat_t gc_gcode_parser(char_t *block)
 }
 
 /*
- * _normalize_gcode_block() - normalize a block (line) of gcode in place
+ * _normalize_gcode_block() - 将G代码块（行）格式化。
  *
- *	Normalization functions:
- *   - convert all letters to upper case
- *	 - remove white space, control and other invalid characters
- *	 - remove (erroneous) leading zeros that might be taken to mean Octal
- *	 - identify and return start of comments and messages
- *	 - signal if a block-delete character (/) was encountered in the first space
+ *	格式化功能:
+ *   - 将所有字母变为大写。
+ *	 - 将空格，control和其他没用的字符去掉。
+ *	 - 将可能会到值被误认为是16进制的错误0开头去掉。
+ *	 - 检测并返回注释和messages的开始。
+ *	 - 如果在第一个字符检测到快删除标志，标志出来。
  *
- *	So this: "  g1 x100 Y100 f400" becomes this: "G1X100Y100F400"
+ *	因此 "  g1 x100 Y100 f400" 将变成这样: "G1X100Y100F400"
  *
- *	Comment and message handling:
- *	 - Comments field start with a '(' char or alternately a semicolon ';'
- *	 - Comments and messages are not normalized - they are left alone
+ *	注释和消息处理:
+ *	 - 注释区域从'（'开始，或者从';'开始。
+ *	 - 注释和消息不需要格式化，也即是将他们保持原样。
  *	 - The 'MSG' specifier in comment can have mixed case but cannot cannot have embedded white spaces
  *	 - Normalization returns true if there was a message to display, false otherwise
  *	 - Comments always terminate the block - i.e. leading or embedded comments are not supported
- *	 	- Valid cases (examples)			Notes:
- *		    G0X10							 - command only - no comment
- *		    (comment text)                   - There is no command on this line
+ *	 	- 有效的例子 (examples)		       	   说明:
+ *		    G0X10							 - 只包含命令，没有注释。
+ *		    (comment text)                   - 没有命令在该行。
  *		    G0X10 (comment text)
- *		    G0X10 (comment text				 - It's OK to drop the trailing paren
- *		    G0X10 ;comment text				 - It's OK to drop the trailing paren
+ *		    G0X10 (comment text				 - 将尾部括号省略是OK的。
+ *		    G0X10 ;comment text				 - 将尾部括号省略是OK的。
  *
- *	 	- Invalid cases (examples)			Notes:
- *		    G0X10 comment text				 - Comment with no separator
- *		    N10 (comment) G0X10 			 - embedded comment. G0X10 will be ignored
- *		    (comment) G0X10 				 - leading comment. G0X10 will be ignored
- * 			G0X10 # comment					 - invalid separator
- *
- *	Returns:
- *	 - com points to comment string or to NUL if no comment
- *	 - msg points to message string or to NUL if no comment
- *	 - block_delete_flag is set true if block delete encountered, false otherwise
+ *	 	- 无效的例子	                		说明:
+ *		    G0X10 comment text				 - 注释没有分隔符
+ *		    N10 (comment) G0X10 			 - 内嵌注释,G0X10将被忽略
+ *		    (comment) G0X10 				 - 以注释开头，GOX10将被忽略。
+ * 			G0X10 # comment					 - 无效的注释分隔符。
+ * 
+ *	返回值:
+ *	 - com指向注释字符串，当指向NULL的时候表示注释为空。
+ *	 - msg指向message字符串，当为空的时候，指向NULL 
+ *	 - block_delete_flag 标志如果被设为真的时候，表示块删除被检测到，否则的话则相反。
  */
 
 static void _normalize_gcode_block(char_t *str, char_t **com, char_t **msg, uint8_t *block_delete_flag)
@@ -120,15 +120,14 @@ static void _normalize_gcode_block(char_t *str, char_t **com, char_t **msg, uint
 	char_t *rd = str;				// read pointer
 	char_t *wr = str;				// write pointer
 
-	// Preset comments and messages to NUL string
-	// Not required if com and msg already point to NUL on entry
+	// 预先设注释和message指针为空。
+	// 如果在入口时com和msg指针已经是指向NUL的时候则不需要了(上层调用的时候进行初始化)。
 //	for (rd = str; *rd != NUL; rd++) { if (*rd == NUL) { *com = rd; *msg = rd; rd = str;} }
-
-	// mark block deletes
+	// 标志块删除
 	if (*rd == '/') { *block_delete_flag = true; }
 	else { *block_delete_flag = false; }
 
-	// normalize the command block & find the comment (if any)
+	// 正常化命令块并找到注释开头(如果有的话)
 	for (; *wr != NUL; rd++) {
 		if (*rd == NUL) { *wr = NUL; }
 		else if ((*rd == '(') || (*rd == ';')) { *wr = NUL; *com = rd+1; }
@@ -137,7 +136,7 @@ static void _normalize_gcode_block(char_t *str, char_t **com, char_t **msg, uint
 		}
 	}
 
-	// Perform Octal stripping - remove invalid leading zeros in number strings
+	//处理16进制去除。删除数字字符串无效的0开头
 	rd = str;
 	while (*rd != NUL) {
 		if (*rd == '.') break;							// don't strip past a decimal point
@@ -163,18 +162,22 @@ static void _normalize_gcode_block(char_t *str, char_t **com, char_t **msg, uint
 }
 
 /*
- * _get_next_gcode_word() - get gcode word consisting of a letter and a value
+ * _get_next_gcode_word() - 获得包含字母和值的G代码字。
  *
- *	This function requires the Gcode string to be normalized.
- *	Normalization must remove any leading zeros or they will be converted to Octal
- *	G0X... is not interpreted as hexadecimal. This is trapped.
+ *	这个函数要求G代母字符串已经被常态化。
+ *	常态化必须移除数字的0开头，否则他们将会被转化成16进制。
+ *	G0X... 是不会被解释为16进制的。这个会被区分出来。
+ *  输入参数：
+ *  **pstr 指向G代码字符指针的指针。
+ * 	*letter 存放字母的字符串
+ *  *value  存放值
  */
 static stat_t _get_next_gcode_word(char **pstr, char *letter, float *value)
 {
 	if (**pstr == NUL)
-        return (STAT_COMPLETE);    // no more words to process
+        return (STAT_COMPLETE);    // 没有剩余的字符需要处理了
 
-	// get letter part
+	// 获取字符部分
 	if(isupper(**pstr) == false)
         return (STAT_INVALID_OR_MALFORMED_COMMAND);
 	*letter = **pstr;

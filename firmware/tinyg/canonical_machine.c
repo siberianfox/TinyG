@@ -26,22 +26,27 @@
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 /*
- * 	This code is a loose implementation of Kramer, Proctor and Messina's canonical
- *	machining functions as described in the NIST RS274/NGC v3
- *
- *	The canonical machine is the layer between the Gcode parser and the motion control
- *	code for a specific robot. It keeps state and executes commands - passing the
- *	stateless commands to the motion planning layer.
+ *  以下代码是对NIST RS274 V3( Kramer, Proctor and Messina's著)中描述的canonical machine
+ *  功能的非严格实现。
+ * 
+ *  canonical machine 是介于G代码解析和运动控制的代码。他保存状态并执行命令 - 传递无状态的命令
+ *  到运动规划层。
  */
-/* --- System state contexts - Gcode models ---
+/* --- 系统状态上下文 -G代码模型 ---
  *
- *	Useful reference for doing C callbacks http://www.newty.de/fpt/fpt.html
+ *  C语言回调函数相关的很有用的参考： http://www.newty.de/fpt/fpt.html
  *
  *	There are 3 temporal contexts for system state:
  *	  - The gcode model in the canonical machine (the MODEL context, held in gm)
  *	  - The gcode model used by the planner (PLANNER context, held in bf's and mm)
  *	  - The gcode model used during motion for reporting (RUNTIME context, held in mr)
- *
+ *  这里有3个
+ * 	  - canonical machine里的G代码模型(MODEL 上下文，存储在gm里)
+ * 	  - planner 里的G代码模型(PLANNER 上下文，存储在bf和mm里)
+ *    - 用于在运动中的报告输出(RUNTIME 上下文，存储在mr里面)
+ * 
+ *  比这个稍复杂的是，gm结构体包含了核心G代码模型上下文。这个在canonical machine中组织，且在运动
+ *  规划时复制到每个规划器缓冲里(planner buffer即bf)。最终gm上下文被传递到
  *	It's a bit more complicated than this. The 'gm' struct contains the core Gcode model
  *	context. This originates in the canonical machine and is copied to each planner buffer
  *	(bf buffer) during motion planning. Finally, the gm context is passed to the runtime
@@ -53,6 +58,7 @@
  *	context, and status reports pull from the RUNTIME while in motion, and from MODEL when
  *	at rest. A convenience is provided in the ACTIVE_MODEL pointer to point to the right
  *	context.
+ *  取决于需要与否，任何其中一个上下文都可能被输出报告或者函数调用。最典型的是，所有新的
  */
 /* --- 同步命令执行---
  *
@@ -83,6 +89,8 @@
  *		and return values for the callback. It's obvious, but impractical to pass the entire
  *		bf buffer to the callback as some of these commands are actually executed locally
  *		and have no buffer.
+ *  注意：
+ * 	  - 同步命令的执行机制是使用在bf缓存里的两个矢量，来为回调函数存储和返回值。这很明显，但是
  */
 
 #include "tinyg.h"			// #1
@@ -111,7 +119,7 @@ extern "C"{
 
 cmSingleton_t cm;		// 一个核心结构体。保存了当前运行的状态，包括坐标平面的选择。每个坐标轴的设置，
 //系统设置（拐角速度，软限位开关）。还有当前G代码解析状态。
-//canonical machine controller singleton
+//canonical machine controller 单例模式
 
 /***********************************************************************************
  **** GENERIC STATIC FUNCTIONS AND VARIABLES ***************************************
@@ -134,10 +142,10 @@ static int8_t _get_axis_type(const index_t index);
  ***********************************************************************************/
 
 /********************************
- * Internal getters and setters *
+ * 内部设置函数和获取函数 *
  ********************************/
 /*
- * Canonical Machine State functions
+ * Canonical Machine 状态函数 
  *
  * cm_get_combined_state() - combines raw states into something a user might want to see
  * cm_get_machine_state()
@@ -222,27 +230,27 @@ void cm_set_model_linenum(uint32_t linenum)
 }
 
 /***********************************************************************************
- * COORDINATE SYSTEMS AND OFFSETS
- * Functions to get, set and report coordinate systems and work offsets
- * These functions are not part of the NIST defined functions
+ * 坐标系统和偏移
+ * 用于设置和获取和报告坐标系统和工件偏移
+ * 这些函数不是NIST定义函数的一部分
  ***********************************************************************************/
 /*
- * Notes on Coordinate System and Offset functions
+ * 坐标系统和偏移函数相关笔记
  *
  * 所有保存在canonical_machine的位置信息都是以相对绝对坐标值来保存的（单位mm）,而偏移(offsets)只是
  * 用来在执行和反应的时候进行转换。
  * 管理坐标系统和偏移有些复杂。以下的因素都会影响到偏移：
- *	- 坐标系统选择，1-9(G54-G59)。
+ *	- 坐标系统选择，1-6(G54-G59)。
  *  - 绝对坐标模式启用：强制当前的移动被解释为以机械坐标为参考。G53
- *	- G92 offsets are added "on top of" the coord system offsets -- if origin_offset_enable == true
- *	- G28 and G30 moves; these are run in absolute coordinates
+ *	- 当 origin_offset_enable ==true G92原点偏移是叠加到坐标系统偏移上面的。
+ *	- G28 和 G30 移动; 这些都是以绝对坐标系来移动的
  *
  *   偏移本身被认为是静态的，并保存在cm结构里面。and are supposed to be persistent.
  *
  * 为了减少复杂度和数据加载，应用了一下的方法：
- *	- Full data for coordinates/offsets is only accessible by the canonical machine, not the downstream
+ *  - 所有的坐标/偏移数据都只能通过canonical machine来设置和获取，而不是下游。
  *	- A fully resolved set of coord and G92 offsets, with per-move exceptions can be captured as "work_offsets"
- *	- The core gcode context (gm) only knows about the active coord system and the work offsets
+ *  - 核心G代码上下文(gm)只知道实际生效的坐标系统和工件偏移。
  */
 
 /*
@@ -250,8 +258,7 @@ void cm_set_model_linenum(uint32_t linenum)
  *
  *	考虑包含G5x、G92和绝对坐标模式，并返回该偏移量。
  *
- *	This function is typically used to evaluate and set offsets, as opposed to cm_get_work_offset()
- *	which merely returns what's in the work_offset[] array.
+ *  这个函数通常用于评估和设置偏移，和cm_get_work_offset()相反，后者只是返回work_offset[]数组中的值而已
  */
 
 float cm_get_active_coord_offset(uint8_t axis)
@@ -264,7 +271,7 @@ float cm_get_active_coord_offset(uint8_t axis)
 }
 
 /*
- * cm_get_work_offset() - return a coord offset from the gcode_state
+ * cm_get_work_offset() - 从gcode_state中返回坐标偏移
  *
  *	This function accepts as input:
  *		MODEL 		(GCodeState_t *)&cm.gm		// absolute pointer from canonical machine gm model
@@ -396,25 +403,22 @@ stat_t cm_deferred_write_callback()
 }
 
 /*
- * cm_set_model_target() - set target vector in GM model
+ * cm_set_model_target() - 在GM模型中设置目标矢量。
  *
- * This is a core routine. It handles:
- *	- conversion of linear units to internal canonical form (mm)
- *	- conversion of relative mode to absolute (internal canonical form)
- *	- translation of work coordinates to machine coordinates (internal canonical form)
- *	- computation and application of axis modes as so:
- *
- *	DISABLED  - Incoming value is ignored. Target value is not changed
- *	ENABLED	  - Convert axis values to canonical format and store as target
- *	INHIBITED - Same processing as ENABLED, but axis will not actually be run
- * 	RADIUS	  - ABC axis value is provided in Gcode block in linear units
- *			  - Target is set to degrees based on axis' Radius value
- *			  - Radius mode is only processed for ABC axes. Application to XYZ is ignored.
- *
- *	Target coordinates are provided in target[]
- *	Axes that need processing are signaled in flag[]
+ * 这是一个重要的函数，它做了一下的处理：
+ *  - 将线性单位转换成mm
+ *  - 将相对模式转换到绝对模式
+ *  - 将工件坐标转换到机器坐标
+ *  - 按照以下的原则计算轴的模式：
+ *  DISABLE  -输入的值被无视。目标值没有改变
+ *  ENABLE   -转换轴的值到canonical 格式并且以target保存起来。
+ *  INHIBITED 一些操作被启用，但是轴并没有实际地运行起来
+ *  RADIUS   -ABC轴的值是以现行单位在G代码中提供的
+ *           -目标值根据轴的设置参数转换成角度
+ *           -半径模式只适用于ABC轴。应用到XYZ轴是无效的。
+ *  目标的坐标轴都在target[]中提供
+ *   轴是否需要进行处理是以flag[]中的标志来区分的
  */
-
 // ESTEE: _calc_ABC is a fix to workaround a gcc compiler bug wherein it runs out of spill
 //        registers we moved this block into its own function so that we get a fresh stack push
 // ALDEN: This shows up in avr-gcc 4.7.0 and avr-libc 1.8.0
@@ -494,16 +498,16 @@ stat_t cm_test_soft_limits(float target[])
  * CANONICAL MACHINING FUNCTIONS
  *	Values are passed in pre-unit_converted state (from gn structure)
  *	All operations occur on gm (current model state)
+ * 
  *
- * These are organized by section number (x.x.x) in the order they are
- * found in NIST RS274 NGCv3
+ * 它们都以章节号(x.x.x)来组织，以方便可以在NIST RS274 NGCv3中找到。
  ************************************************************************/
 
 /******************************************
- * Initialization and Termination (4.3.2) *
+ * 初始化和终止 (4.3.2) *
  ******************************************/
 /*
- * canonical_machine_init() - Config init cfg_init() must have been run beforehand
+ * canonical_machine_init() - 配置初始化 cfg_init() 必须先在前面运行过。
  */
 
 void canonical_machine_init()
@@ -877,11 +881,12 @@ stat_t cm_goto_g30_position(float target[], float flags[])
 }
 
 /********************************
- * Machining Attributes (4.3.5) *
+ * 机器设备属性(4.3.5) *
  ********************************/
 /*
- * cm_set_feed_rate() - F parameter (affects MODEL only)
+ * cm_set_feed_rate() - F 参数（只影响MODEL）
  *
+ * 在反向时间模式下，将进给率转化为mm/min。
  * Normalize feed rate to mm/min or to minutes if in inverse time mode
  */
 
@@ -961,16 +966,16 @@ stat_t cm_straight_feed(float target[], float flags[])
 }
 
 /*****************************
- * Spindle Functions (4.3.7) *
+ * 主轴控制函数 (4.3.7) *
  *****************************/
-// see spindle.c, spindle.h
+// 查看 spindle.c, spindle.h
 
 /**************************
- * Tool Functions (4.3.8) *
+ * 刀具功能 (4.3.8) *
  **************************/
 /*
- * cm_select_tool()		- T parameter
- * _exec_select_tool()	- execution callback
+ * cm_select_tool()		- T 参数
+ * _exec_select_tool()	- 执行回调
  *
  * cm_change_tool()		- M6 (This might become a complete tool change cycle)
  * _exec_change_tool()	- execution callback
@@ -1003,7 +1008,7 @@ static void _exec_change_tool(float *value, float *flag)
 }
 
 /***********************************
- * Miscellaneous Functions (4.3.9) *
+ * 其他功能 (4.3.9) *
  ***********************************/
 /*
  * cm_mist_coolant_control() - M7
@@ -1364,13 +1369,13 @@ void cm_program_end()
  **************************************/
 
 /***********************************************************************************
- * CONFIGURATION AND INTERFACE FUNCTIONS
- * Functions to get and set variables from the cfgArray table
- * These functions are not part of the NIST defined functions
+ * 配置和接口函数
+ * 包含了从cfgarray中获取和设置值的函数
+ * 这些函数不是NIST定义的功能中的一部分
  ***********************************************************************************/
 
 // Strings for writing settings as nvObj string values
-// Ref: http://www.avrfreaks.net/index.php?name=PNphpBB2&file=printview&t=120881&start=0
+// 参考: http://www.avrfreaks.net/index.php?name=PNphpBB2&file=printview&t=120881&start=0
 
 #ifdef __TEXT_MODE
 
@@ -1655,7 +1660,7 @@ stat_t cm_get_ofs(nvObj_t *nv)
 }
 
 /*
- * AXIS GET AND SET FUNCTIONS
+ *	轴获取和设置函数
  *
  * cm_get_am()	- get axis mode w/enumeration string
  * cm_set_am()	- set axis mode w/exception handling for axis type
@@ -1679,18 +1684,19 @@ stat_t cm_set_am(nvObj_t *nv)		// axis mode
 	return(STAT_OK);
 }
 
-/**** Jerk functions
- * cm_get_axis_jerk() - returns jerk for an axis
- * cm_set_axis_jerk() - sets the jerk for an axis, including recirpcal and cached values
+/**** 加加速，S曲线功能
+ * cm_get_axis_jerk() - 返回轴的加加速度
+ * cm_set_axis_jerk() - 为某个轴设置加加速度，包括sets the jerk for an axis, including recirpcal and cached values
  *
- * cm_set_xjm()		  - set jerk max value
+ * cm_set_xjm()		  - 设置最大加加速度
  * cm_set_xjh()		  - set jerk halt value (used by homing and other stops)
  *
- *	Jerk values can be rather large, often in the billions. This makes for some pretty big
- *	numbers for people to deal with. Jerk values are stored in the system in truncated format;
- *	values are divided by 1,000,000 then reconstituted before use.
+ *  加加速度的值可以非常大，通常是百万以上。这导致了需要我们来处理非常大的数字。加加速度以截断格式化存储在系统内
+ *  数值被除以1,000,000，使用前需要进行重组。
  *
- *	The set_xjm() nad set_xjh() functions will accept either truncated or untruncated jerk
+ *	set_xjm() 和 set_xjh() 函数可以接收截断或者未截断的加加速度值。如果输入值大于1,000,000，它
+ 
+ 	functions will accept either truncated or untruncated jerk
  *	numbers as input. If the number is > 1,000,000 it is divided by 1,000,000 before storing.
  *	Numbers are accepted in either millimeter or inch mode and converted to millimeter mode.
  *
@@ -1723,10 +1729,10 @@ stat_t cm_set_xjh(nvObj_t *nv)
 }
 
 /*
- * Commands
+ * 命令 
  *
- * cm_run_qf() - flush planner queue
- * cm_run_home() - run homing sequence
+ * cm_run_qf() - 清空规划器(planner)队列 
+ * cm_run_home() - 运行返回原点序列
  */
 
 stat_t cm_run_qf(nvObj_t *nv)
@@ -1742,9 +1748,9 @@ stat_t cm_run_home(nvObj_t *nv)
 }
 
 /*
- * Debugging Commands
+ * Debugging 调试命令 
  *
- * cm_dam() - dump active model
+ * cm_dam() - dump 生效的模型
  */
 
 stat_t cm_dam(nvObj_t *nv)
@@ -1772,7 +1778,7 @@ stat_t cm_dam(nvObj_t *nv)
 }
 
 /***********************************************************************************
- * AXIS JOGGING
+ * 轴手轮引导
  ***********************************************************************************/
 
 float cm_get_jogging_dest(void)
@@ -1809,8 +1815,8 @@ stat_t cm_run_joga(nvObj_t *nv)
 }
 
 /***********************************************************************************
- * TEXT MODE SUPPORT
- * Functions to print variables from the cfgArray table
+ * 文本模式支持 
+ * 用于从cfgarray中输出值的函数
  ***********************************************************************************/
 
 #ifdef __TEXT_MODE
@@ -1870,7 +1876,7 @@ void cm_print_gco(nvObj_t *nv) { text_print_int(nv, fmt_gco);}
 void cm_print_gpa(nvObj_t *nv) { text_print_int(nv, fmt_gpa);}
 void cm_print_gdi(nvObj_t *nv) { text_print_int(nv, fmt_gdi);}
 
-/* system state print functions */
+/* 系统状态输出函数 */
 
 const char fmt_ja[] PROGMEM = "[ja]  junction acceleration%8.0f%s\n";
 const char fmt_ct[] PROGMEM = "[ct]  chordal tolerance%17.4f%s\n";

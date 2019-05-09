@@ -42,29 +42,26 @@
  */
 /*
  * CAVEAT EMPTOR: File under "watch your ass":
+ * 警告买家：需要非常小心注意的文件
  *
- * 	  - Short story: Do not call ANYTHING that can print (i.e. send chars to the TX
- *		buffer) from a medium or hi interrupt. This obviously includes any printf()
- *		function, but also exception reports, cm_soft_alarm(), cm_hard_alarm() and a
- *		few other functions that call stdio print functions.
+ *    - 简短叙述：切勿在中优先级中断或者高优先级中断中调用任何会打印输出的函数(例如发送字符串
+ * 		到发送缓冲) 。这很明显包括了任何printf()函数，以及异常输出，cm_soft_alarm(), 
+ * 		cm_hard_alarm()，和一些其他的会调用stdio 输出函数的函数。
  *
- * 	  - Longer Story: The stdio printf() functions use character drivers provided by
- *		tinyg to access the low-level Xmega devices. Specifically xio_putc_usb() in xio_usb.c,
- *		and xio_putc_rs485() in xio_rs485.c. Since stdio does not understand non-blocking
- *		IO these functions must block if there is no space in the TX buffer. Blocking is
- *		accomplished using sleep_mode(). The IO system is the only place where sleep_mode()
- *		is used. Everything else in TinyG is non-blocking. Sleep is woken (exited) whenever
- *		any interrupt fires. So there must always be a viable interrupt source running when
- *		you enter a sleep or the system will hang (lock up). In the IO functions this is the
- *		TX interupts, which fire when space becomes available in the USART for a TX char. This
- *		Means you cannot call a print function at or above the level of the TX interrupts,
- *		which are set to medium.
+ * 	  - 长一些的叙述：stdio（标准输入输出）的printf()函数使用了由tinyg提供的字符驱动来进入底层
+ * 		xmega 设备。特别的，xio_usb.c的xio_putc_usb()，和xio_rs485.c中的xio_putc_rs485()。
+ * 		因为stdio不懂得非堵塞IO，这些函数在发送缓冲没有空间的时候都必须堵塞。堵塞是通过使用
+ * 		sleep_mode()来完成来的。输入输出系统是唯一一个使用sleep_mode()的地方。所有其他在TinyG中
+ * 		的程序都是非堵塞的。睡眠在任何中断触发的时候退出，所以在进入睡眠前必须一直有可行的中断源在
+ *      运行中，否则系统将会被挂起(锁住)。在输入输出函数中，这个中断源是发送中断，它在USART串口中
+ * 	    有可用的空间用于发送字符的时候触发，这意味着你不可以在中断优先级等于或者高于发送中断的函数
+ * 		中调用print函数，发送中断优先级处于中等优先级。
  */
 #ifndef XIO_H_ONCE
 #define XIO_H_ONCE
 
 /*************************************************************************
- *	Device configurations
+ *	设备配置
  *************************************************************************/
 // Pre-allocated XIO devices (configured devices)
 // Unused devices are commented out. All this needs to line up.

@@ -156,7 +156,7 @@ static stat_t _jogging_axis_jog(int8_t axis)			// run the jog move
 	float delta = abs(jog.dest_pos - jog.start_pos);
 
 	cm.gm.feed_rate = velocity;
-	mp_flush_planner();									// don't use cm_request_queue_flush() here
+	mp_flush_planner();									// 不要在这里使用cm_request_queue_flush()
 	cm_request_cycle_start();
 
 #if 1
@@ -192,11 +192,11 @@ static stat_t _jogging_axis_jog(int8_t axis)			// run the jog move
 }
 
 
-static stat_t _jogging_finalize_exit(int8_t axis)	// finish a jog
+static stat_t _jogging_finalize_exit(int8_t axis)	// 结束手轮引导
 {
-	mp_flush_planner(); 							// FIXME: not sure what to do on exit
+	mp_flush_planner(); 							// FIXME: 不太确定在退出的时候做什么
 	cm_set_axis_jerk(axis, jog.saved_jerk);
-	cm_set_coord_system(jog.saved_coord_system);	// restore to work coordinate system
+	cm_set_coord_system(jog.saved_coord_system);	// 重新加载工件坐标系统
 	cm_set_units_mode(jog.saved_units_mode);
 	cm_set_distance_mode(jog.saved_distance_mode);
 	cm_set_feed_rate_mode(jog.saved_feed_rate_mode);

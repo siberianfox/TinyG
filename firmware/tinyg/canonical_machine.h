@@ -37,7 +37,7 @@ extern "C"{
 */
 #include "config.h"
 
-/* Defines, Macros, and  Assorted Parameters */
+/* 定义，宏，和各种参数*/
 
 #define MODEL 	(GCodeState_t *)&cm.gm		// absolute pointer from canonical machine gm model
 #define PLANNER (GCodeState_t *)&bf->gm		// relative to buffer *bf is currently pointing to
@@ -194,19 +194,20 @@ typedef struct GCodeInput {				// Gcode model inputs - meaning depends on contex
 } GCodeInput_t;//这个结构体保存了输入的G代码类型和G代码参数
 
 /*****************************************************************************
- * CANONICAL MACHINE STRUCTURES
+ * CANONICAL MACHINE 结构体
  */
 
+//译注: work envelope https://www.robots.com/faq/what-is-a-work-envelope
 typedef struct cmAxis {
-	uint8_t axis_mode;					// see tgAxisMode in gcode.h
-	float feedrate_max;					// max velocity in mm/min or deg/min
-	float velocity_max;					// max velocity in mm/min or deg/min
+	uint8_t axis_mode;					// 查看gcode.h中的tgAxisMode
+	float feedrate_max;					// mm/min或者deg/min为单位的最大速度
+	float velocity_max;					// mmm/min或者deg/min为单位的最大速度
 	float travel_max;					// max work envelope for soft limits
 	float travel_min;					// min work envelope for soft limits
-	float jerk_max;						// max jerk (Jm) in mm/min^3 divided by 1 million
-	float jerk_homing;					// homing jerk (Jh) in mm/min^3 divided by 1 million
+	float jerk_max;						// 最大加加速度(Jm)，单位为mm/min^3 除以1000000
+	float jerk_homing;					// 归位过程最大加加速度(Jm)，单位为mm/min^3 除以1000000
 	float recip_jerk;					// stored reciprocal of current jerk value - has the million in it
-	float junction_dev;					// aka cornering delta
+	float junction_dev;					// 也就是转角delta
 	float radius;						// radius in mm for rotary axis modes
 	float search_velocity;				// homing search velocity
 	float latch_velocity;				// homing latch velocity
@@ -215,29 +216,29 @@ typedef struct cmAxis {
 } cfgAxis_t;
 
 typedef struct cmSingleton {			// struct to manage cm globals and cycles
-	magic_t magic_start;				// magic number to test memory integrity
+	magic_t magic_start;				// 用于测试内存完整性的魔法数
 
-	/**** Config variables (PUBLIC) ****/
+	/**** 配置变量(公用) ****/
 
 	//系统设置组 
-	float junction_acceleration;		// centripetal acceleration max for cornering
-	float chordal_tolerance;			// arc chordal accuracy setting in mm
+	float junction_acceleration;		// 转角的最大向心加速度
+	float chordal_tolerance;			// 弧线精度设置，单位为mm
 	uint8_t soft_limit_enable;
 
 	//隐藏系统设置 
-	float min_segment_len;				// line drawing resolution in mm
-	float arc_segment_len;				// arc drawing resolution in mm
-	float estd_segment_usec;			// approximate segment time in microseconds
+	float min_segment_len;				// 线精度，单位为mm
+	float arc_segment_len;				// 弧线精度，单位为mm
+	float estd_segment_usec;			// 线段运行大致时间，单位为ms
 
 	// G代码上电默认设置 - 默认不是和gm state一样。
-	uint8_t coord_system;				// G10 active coordinate system default
-	uint8_t select_plane;				// G17,G18,G19 reset default
-	uint8_t units_mode;					// G20,G21 reset default
-	uint8_t path_control;				// G61,G61.1,G64 reset default
-	uint8_t distance_mode;				// G90,G91 reset default
+	uint8_t coord_system;				// G10 默认生效的坐标系统
+	uint8_t select_plane;				// G17,G18,G19 复位默认值
+	uint8_t units_mode;					// G20,G21 复位默认值
+	uint8_t path_control;				// G61,G61.1,G64 复位默认值
+	uint8_t distance_mode;				// G90,G91 复位默认值
 
 	// 坐标系统和偏移
-	float offset[COORDS+1][AXES];		// persistent coordinate offsets: absolute (G53) + G54,G55,G56,G57,G58,G59
+	float offset[COORDS+1][AXES];		// persistent 坐标偏移: 绝对坐标 (G53) + G54,G55,G56,G57,G58,G59
 
 	// 每个轴的设置 X,Y,Z,A,B,C
 	cfgAxis_t a[AXES];
@@ -278,7 +279,7 @@ typedef struct cmSingleton {			// struct to manage cm globals and cycles
 extern cmSingleton_t cm;				// canonical machine controller singleton
 
 /*****************************************************************************
- * MACHINE STATE MODEL
+ * 机器状态模型 
  *
  * The following main variables track canonical machine state and state transitions.
  *		- cm.machine_state	- overall state of machine and program execution
@@ -325,48 +326,48 @@ enum cmCombinedState {				// check alignment with messages in config.c / msg_sta
 //### END CRITICAL REGION ###
 
 enum cmMachineState {
-	MACHINE_INITIALIZING = 0,		// machine is initializing
-	MACHINE_READY,					// machine is ready for use
-	MACHINE_ALARM,					// machine in soft alarm state
-	MACHINE_PROGRAM_STOP,			// program stop or no more blocks
-	MACHINE_PROGRAM_END,			// program end
-	MACHINE_CYCLE,					// machine is running (cycling)
-	MACHINE_SHUTDOWN,				// machine in hard alarm state (shutdown)
+	MACHINE_INITIALIZING = 0,		// 机器正在初始化
+	MACHINE_READY,					// 机器已经准备好可以使用了
+	MACHINE_ALARM,					// 机器处于软限位状态
+	MACHINE_PROGRAM_STOP,			// 程序停止或者没有更多的block了
+	MACHINE_PROGRAM_END,			// 程序结束
+	MACHINE_CYCLE,					// 机器正在运行中(循环)
+	MACHINE_SHUTDOWN,				// 机器处于hard警报状态(关机)
 };
 
 enum cmCycleState {
-	CYCLE_OFF = 0,					// machine is idle
-	CYCLE_MACHINING,				// in normal machining cycle
-	CYCLE_PROBE,					// in probe cycle
-	CYCLE_HOMING,					// homing is treated as a specialized cycle
-	CYCLE_JOG						// jogging is treated as a specialized cycle
+	CYCLE_OFF = 0,					// 机器闲置中
+	CYCLE_MACHINING,				// 处于循环运行中
+	CYCLE_PROBE,					// 处于对刀循环中
+	CYCLE_HOMING,					// 归位被当做一个特别的循环状态
+	CYCLE_JOG						// 手轮引导被当做一个特别的循环状态
 };
 
 enum cmMotionState {
-	MOTION_STOP = 0,				// motion has stopped
-	MOTION_RUN,						// machine is in motion
-	MOTION_HOLD						// feedhold in progress
+	MOTION_STOP = 0,				// 运动已经停止
+	MOTION_RUN,						// 机器处于运动中
+	MOTION_HOLD						// 进给保持中
 };
 
-enum cmFeedholdState {				// feedhold_state machine
-	FEEDHOLD_OFF = 0,				// no feedhold in effect
-	FEEDHOLD_SYNC, 					// start hold - sync to latest aline segment
-	FEEDHOLD_PLAN, 					// replan blocks for feedhold
-	FEEDHOLD_DECEL,					// decelerate to hold point
-	FEEDHOLD_HOLD,					// holding
-	FEEDHOLD_END_HOLD				// end hold (transient state to OFF)
+enum cmFeedholdState {				// 进给保持状态机
+	FEEDHOLD_OFF = 0,				// 没有进给保持生效中
+	FEEDHOLD_SYNC, 					// 开始进给保持 - 同步到最近的aline segment
+	FEEDHOLD_PLAN, 					// 为进给保持重新规划block
+	FEEDHOLD_DECEL,					// 减速到保持点
+	FEEDHOLD_HOLD,					// 进给保持中
+	FEEDHOLD_END_HOLD				// 结束进给保持(到OFF的临时状态)
 };
 
-enum cmHomingState {				// applies to cm.homing_state
-	HOMING_NOT_HOMED = 0,			// machine is not homed (0=false)
-	HOMING_HOMED = 1,				// machine is homed (1=true)
-	HOMING_WAITING					// machine waiting to be homed
+enum cmHomingState {				// 应用到cm.home_state
+	HOMING_NOT_HOMED = 0,			// 机器没有被归位(0=false)
+	HOMING_HOMED = 1,				// 机器已经被归位了(1=true)
+	HOMING_WAITING					// 机器等待被归位中
 };
 
-enum cmProbeState {					// applies to cm.probe_state
-	PROBE_FAILED = 0,				// probe reached endpoint without triggering
-	PROBE_SUCCEEDED = 1,			// probe was triggered, cm.probe_results has position
-	PROBE_WAITING					// probe is waiting to be started
+enum cmProbeState {					// 应用到 cm.probe_state
+	PROBE_FAILED = 0,				// 对刀已经到达结束点，但没有收到触发信号
+	PROBE_SUCCEEDED = 1,			// 对刀信号已经触发了，cm.probe_results 记录了位置
+	PROBE_WAITING					// 对刀正在等待开始
 };
 
 /* The difference between NextAction and MotionMode is that NextAction is
@@ -592,19 +593,19 @@ stat_t cm_reset_origin_offsets(void); 							// G92.1
 stat_t cm_suspend_origin_offsets(void); 						// G92.2
 stat_t cm_resume_origin_offsets(void);				 			// G92.3
 
-// Free Space Motion (4.3.4)
+// 自由空间运动 (4.3.4)
 stat_t cm_straight_traverse(float target[], float flags[]);		// G0
 stat_t cm_set_g28_position(void);								// G28.1
 stat_t cm_goto_g28_position(float target[], float flags[]); 	// G28
 stat_t cm_set_g30_position(void);								// G30.1
 stat_t cm_goto_g30_position(float target[], float flags[]);		// G30
 
-// Machining Attributes (4.3.5)
+// 机器属性 (4.3.5)
 stat_t cm_set_feed_rate(float feed_rate);						// F parameter
 stat_t cm_set_feed_rate_mode(uint8_t mode);						// G93, G94, (G95 unimplemented)
 stat_t cm_set_path_control(uint8_t mode);						// G61, G61.1, G64
 
-// Machining Functions (4.3.6)
+// 机器功能 (4.3.6)
 stat_t cm_straight_feed(float target[], float flags[]);		    // G1
 stat_t cm_arc_feed(	float target[], float flags[],              // G2, G3
 					float i, float j, float k,
