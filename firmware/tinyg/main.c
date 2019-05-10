@@ -20,7 +20,7 @@
 /* See github.com/Synthetos/tinyg for code and docs on the wiki
  */
 
-#include "tinyg.h"					// #1 There are some dependencies
+#include "tinyg.h"					// #1 这里有许多依赖 
 #include "config.h"					// #2
 #include "hardware.h"
 #include "persistence.h"
@@ -59,7 +59,7 @@ void __libc_init_array(void);
 #endif // __cplusplus
 #endif // __ARM
 
-/******************** Application Code ************************/
+/******************** 程序代码 ************************/
 
 #ifdef __ARM
 const Motate::USBSettings_t Motate::USBSettings = {
@@ -110,37 +110,37 @@ void _system_init(void)
 
 static void _application_init(void)
 {
-	// There are a lot of dependencies in the order of these inits.
-	// Don't change the ordering unless you understand this.
+	// 这里的初始化顺序有许多依赖关系
+	// 除非你知道这些关系，否则不要改动这些顺序
 
-	cli();
+	cli();//关闭全局中断
 
-	// do these first
-	hardware_init();				// system hardware setup 			- must be first
-	persistence_init();				// set up EEPROM or other NVM		- must be second
-	rtc_init();						// real time counter
-	xio_init();						// eXtended IO subsystem
+	// 先完成这个 
+	hardware_init();				// 系统硬件设置 				 - 必须第一个完成
+	persistence_init();				// 设置EEPROM或者其他非易失性存储 - 必须第二个完成
+	rtc_init();						// 实时时钟
+	xio_init();						// 扩展IO子系统
 
-	// do these next
-	stepper_init(); 				// stepper subsystem 				- must precede gpio_init()
-	encoder_init();					// virtual encoders
-	switch_init();					// switches
-//	gpio_init();					// parallel IO
-	pwm_init();						// pulse width modulation drivers	- must follow gpio_init()
+	// 然后再做这个
+	stepper_init(); 				// 步进电机子系统 				- 必须在gpio_init()前
+	encoder_init();					// 虚拟编码器 
+	switch_init();					// 开关
+//	gpio_init();					// 并行IO
+	pwm_init();						// 脉冲宽度调制驱动		     	- 必须跟随着gpio_init()后
 
-	controller_init(STD_IN, STD_OUT, STD_ERR);// must be first app init; reqs xio_init()
-	config_init();					// config records from eeprom 		- must be next app init
-	network_init();					// reset std devices if required	- must follow config_init()
-	planner_init();					// motion planning subsystem
-	canonical_machine_init();		// canonical machine				- must follow config_init()
+	controller_init(STD_IN, STD_OUT, STD_ERR);// 必须作为第一个应用初始; reqs xio_init()
+	config_init();					// 记录在eeprom中的配置         - 必须作为下一个应用初始化
+	network_init();					// 如果有需要，复位std设备   	- 必须在config_init()后
+	planner_init();					// 运动规划子系统
+	canonical_machine_init();		// canonical machine		  - 必须在config_init()后
 
-	// now bring up the interrupts and get started
-	PMIC_SetVectorLocationToApplication();// as opposed to boot ROM
-	PMIC_EnableHighLevel();			// all levels are used, so don't bother to abstract them
+	// 下面启动中断并开始
+	PMIC_SetVectorLocationToApplication();// 和启动(boot)ROM相反
+	PMIC_EnableHighLevel();			// 所有的中断优先级都被使用了，所以不用费心去处理它们
 	PMIC_EnableMediumLevel();
 	PMIC_EnableLowLevel();
-	sei();							// enable global interrupts
-	rpt_print_system_ready_message();// (LAST) announce system is ready
+	sei();							// 开启全局中断 
+	rpt_print_system_ready_message();// (最后) 提示系统已经准备好了
 }
 
 /*
@@ -149,14 +149,14 @@ static void _application_init(void)
 
 int main(void)
 {
-	// system initialization
+	// 系统初始化 
 	_system_init();
 
-	// TinyG application setup
+	// TinyG 应用设置
 	_application_init();
-	run_canned_startup();			// run any pre-loaded commands
+	run_canned_startup();			// 运行一些预加载的命令 
 
-	// main loop
+	// 主循环 
 	for (;;) {
 		controller_run( );			// single pass through the controller
 	}
@@ -164,22 +164,22 @@ int main(void)
 }
 
 
-/**** Status Messages ***************************************************************
- * get_status_message() - return the status message
+/**** 状态信息 ***************************************************************
+ * get_status_message() - 返回状态信息 
  *
- * See tinyg.h for status codes. These strings must align with the status codes in tinyg.h
- * The number of elements in the indexing array must match the # of strings
+ * 状态码可以在tinyg.h中查询。这些字符串必须和tinyg.h中的状态码对齐。
+ * 数组中元素的号码必须和字符串的标号一致 
  *
- * Reference for putting display strings and string arrays in AVR program memory:
+ * 关于输出AVR程序存储(FLASH)中的显示字符串和字符串数组参考：
  * http://www.cs.mun.ca/~paul/cs4723/material/atmel/avr-libc-user-manual-1.6.5/pgmspace.html
  */
 
-stat_t status_code;						// allocate a variable for the ritorno macro
-char global_string_buf[MESSAGE_LEN];	// allocate a string for global message use
+stat_t status_code;						// 分配一个变量用于ritorno宏(ritorno定义处查看详细)
+char global_string_buf[MESSAGE_LEN];	// 分配一个字符串数组用于全局信息输出 
 
 //#ifdef __TEXT_MODE
 
-/*** Status message strings ***/
+/*** 状态信息字符串 ***/
 
 static const char stat_00[] PROGMEM = "OK";
 static const char stat_01[] PROGMEM = "Error";

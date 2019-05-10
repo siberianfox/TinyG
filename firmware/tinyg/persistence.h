@@ -28,22 +28,22 @@
 #ifndef PERSISTENCE_H_ONCE
 #define PERSISTENCE_H_ONCE
 
-#include "config.h"						// needed for nvObj_t definition
+#include "config.h"						// 需要使用 nvObj_t 
 
 #define NVM_VALUE_LEN 4					// NVM value length (float, fixed length)
-#define NVM_BASE_ADDR 0x0000			// base address of usable NVM
+#define NVM_BASE_ADDR 0x0000			// 可用的NVM基址
 
 //**** persistence singleton ****
 
 typedef struct nvmSingleton {
-	uint16_t base_addr;					// NVM base address
+	uint16_t base_addr;					// NVM 基址 
 	uint16_t profile_base;				// NVM base address of current profile]
 	uint16_t address;
 	float tmp_value;
 	int8_t byte_array[NVM_VALUE_LEN];
 } nvmSingleton_t;
 
-//**** persistence function prototypes ****
+//**** persistence 函数原型 ****
 
 void persistence_init(void);
 stat_t read_persistent_value(nvObj_t *nv);

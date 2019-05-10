@@ -240,7 +240,7 @@ enum cfgPortBits {			// motor control port bit positions
 #define TIMER_EXEC_INTLVL	TIMER_OVFINTLVL_LO
 
 
-/**** Device singleton - global structure to allow iteration through similar devices ****/
+/**** 设备单例 - 全局结构体便于通过相似芯片来进行迭代 ****/
 /*
 	端口都是在步进电机和GPIO之间共享的，所以我们需要一个全局结构。
 	每个xmega端口有三个绑定，电机，开关和输出位
@@ -248,12 +248,7 @@ enum cfgPortBits {			// motor control port bit positions
 	初始化顺序非常重要。它们的顺序是：
 		- sys_init() 绑定所有端口到device结构体。
 		- st_init()  设置IO方向和设置步进电机
-
-
-	The initialization sequence is important. the order is:
-		- sys_init()	binds all ports to the device struct
-		- st_init() 	sets IO directions and sets stepper VPORTS and stepper specific functions
-		- gpio_init()	sets up input and output functions and required interrupts
+		- gpio_init() 设置输入和输出功能和需要的中断
 
 	Care needs to be taken in routines that use ports not to write to bits that are
 	not assigned to the designated function - ur unpredicatable results will occur

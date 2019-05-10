@@ -31,7 +31,7 @@
 #ifndef TINYG_H_ONCE
 #define TINYG_H_ONCE
 
-// common system includes
+// 通用系统include 
 #include <ctype.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -42,33 +42,33 @@
 
 //#include "MotatePins.h"
 
-/****** REVISIONS ******/
+/****** 修订 ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
 #define TINYG_FIRMWARE_BUILD        440.20	// arc test
 
 #endif
-#define TINYG_FIRMWARE_VERSION		0.97					// firmware major version
-#define TINYG_HARDWARE_PLATFORM		HW_PLATFORM_TINYG_XMEGA	// see hardware.h
-#define TINYG_HARDWARE_VERSION		HW_VERSION_TINYGV8		// see hardware.h
+#define TINYG_FIRMWARE_VERSION		0.97					// 主固件版本 
+#define TINYG_HARDWARE_PLATFORM		HW_PLATFORM_TINYG_XMEGA	// 查看 hardware.h
+#define TINYG_HARDWARE_VERSION		HW_VERSION_TINYGV8		// 查看 hardware.h
 #define TINYG_HARDWARE_VERSION_MAX	TINYG_HARDWARE_VERSION
 
-/****** COMPILE-TIME SETTINGS ******/
+/****** 编译时设置 ******/
 
 #define __STEP_CORRECTION
-//#define __NEW_SWITCHES					// Using v9 style switch code
+//#define __NEW_SWITCHES					// 使用v9版本的switch 代码
 //#define __JERK_EXEC						// Use computed jerk (versus forward difference based exec)
 //#define __KAHAN							// Use Kahan summation in aline exec functions
 
-#define __TEXT_MODE							// enables text mode	(~10Kb)
-#define __HELP_SCREENS						// enables help screens (~3.5Kb)
-#define __CANNED_TESTS 						// enables $tests 		(~12Kb)
-#define __TEST_99 							// enables diagnostic test 99 (independent of other tests)
+#define __TEXT_MODE							// 使能 text 模式	(~10Kb)
+#define __HELP_SCREENS						// 使能 帮助 (~3.5Kb)
+#define __CANNED_TESTS 						// 使能 $tests 		(~12Kb)
+#define __TEST_99 							// 使能诊断测试99（独立于其他测试）
 
-/****** DEVELOPMENT SETTINGS ******/
+/****** 开发设置 ******/
 
-#define __DIAGNOSTIC_PARAMETERS				// enables system diagnostic parameters (_xx) in config_app
-//#define __DEBUG_SETTINGS					// special settings. See settings.h
+#define __DIAGNOSTIC_PARAMETERS				// 使能系统诊断参数，位于config_app中的(_xx) 
+//#define __DEBUG_SETTINGS					// 特殊测试，详情在settings.h
 //#define __CANNED_STARTUP					// run any canned startup moves
 
 //#ifndef WEAK
@@ -76,7 +76,7 @@
 //#endif
 
 /************************************************************************************
- ***** PLATFORM COMPATIBILITY *******************************************************
+ ****************** 平台兼容性 *******************************************************
  ************************************************************************************/
 #undef __AVR
 #define __AVR
@@ -84,41 +84,41 @@
 //#define __ARM
 
 /*********************
- * AVR Compatibility *
+ * AVR兼容 *
  *********************/
 #ifdef __AVR
 
-#include <avr/pgmspace.h>		// defines PROGMEM and PSTR
+#include <avr/pgmspace.h>		// 定义 PROGMEM 和 PSTR
 
-typedef char char_t;			// ARM/C++ version uses uint8_t as char_t
+typedef char char_t;			// ARM/C++ 版本使用uint8_t作为char_t
 
-																	// gets rely on nv->index having been set
-#define GET_TABLE_WORD(a)  pgm_read_word(&cfgArray[nv->index].a)	// get word value from cfgArray
-#define GET_TABLE_BYTE(a)  pgm_read_byte(&cfgArray[nv->index].a)	// get byte value from cfgArray
-#define GET_TABLE_FLOAT(a) pgm_read_float(&cfgArray[nv->index].a)	// get float value from cfgArray
-#define GET_TOKEN_BYTE(a)  (char_t)pgm_read_byte(&cfgArray[i].a)	// get token byte value from cfgArray
+																	// 获取功能的宏都依赖于预先设置好的nv->index
+#define GET_TABLE_WORD(a)  pgm_read_word(&cfgArray[nv->index].a)	// 从 cfgArray 中获取一个字(word)
+#define GET_TABLE_BYTE(a)  pgm_read_byte(&cfgArray[nv->index].a)	// 从 cfgArray 中获取一个字节
+#define GET_TABLE_FLOAT(a) pgm_read_float(&cfgArray[nv->index].a)	// 从 cfgArray 中获取一个浮点数
+#define GET_TOKEN_BYTE(a)  (char_t)pgm_read_byte(&cfgArray[i].a)	// 从 cfgArray 中获取一个token 字节
 
 // populate the shared buffer with the token string given the index
 #define GET_TOKEN_STRING(i,a) strcpy_P(a, (char *)&cfgArray[(index_t)i].token);
 
-// get text from an array of strings in PGM and convert to RAM string
+// 从PGM中的字符串数组获取文本并转化成内存(RAM)字符串
 #define GET_TEXT_ITEM(b,a) strncpy_P(global_string_buf,(const char *)pgm_read_word(&b[a]), MESSAGE_LEN-1)
 
-// get units from array of strings in PGM and convert to RAM string
+// 从PGM中的字符串数组获取单位并转化到内存中去
 #define GET_UNITS(a) strncpy_P(global_string_buf,(const char *)pgm_read_word(&msg_units[cm_get_units_mode(a)]), MESSAGE_LEN-1)
 
-// IO settings
-#define STD_IN 	XIO_DEV_USB		// default IO settings
+// IO 设置 
+#define STD_IN 	XIO_DEV_USB		// 默认IO设置 
 #define STD_OUT	XIO_DEV_USB
 #define STD_ERR	XIO_DEV_USB
 
-// String compatibility
-#define strtof strtod			// strtof is not in the AVR lib
+// 字符串兼容 
+#define strtof strtod			// strtof 没有在 AVR lib 中
 
 #endif // __AVR
 
 /*********************
- * ARM Compatibility *
+ * ARM 兼容 *
  *********************/
 #ifdef __ARM
 								// Use macros to fake out AVR's PROGMEM and other AVRisms.
@@ -180,22 +180,21 @@ typedef char char_t;			// In the ARM/GCC++ version char_t is typedef'd to uint8_
 #endif // __ARM
 
 /******************************************************************************
- ***** TINYG APPLICATION DEFINITIONS ******************************************
+ ***** TINYG 应用定义 ******************************************
  ******************************************************************************/
 
-typedef uint16_t magic_t;		// magic number size
-#define MAGICNUM 0x12EF			// used for memory integrity assertions
+typedef uint16_t magic_t;		// “魔法数”的大小 
+#define MAGICNUM 0x12EF			// 用于内存完整性assertions校验
 
-/***** Axes, motors & PWM channels used by the application *****/
-// Axes, motors & PWM channels must be defines (not enums) so #ifdef <value> can be used
+/***** 轴，电机和PWM通道 *****/
+// 轴，电机和PWM通道必须被定义（不是枚举）所以#ifdef <值> 可以被使用
+#define AXES		6			// 在这个版本中支持多少个轴
+#define HOMING_AXES	4			// 多少个轴可以被归位（假设Zxyabc顺序）
+#define MOTORS		4			// 板上有多少个电机
+#define COORDS		6			// 支持多少个坐标系统(1-6)
+#define PWMS		2			// 支持多少个PWMM通道
 
-#define AXES		6			// number of axes supported in this version
-#define HOMING_AXES	4			// number of axes that can be homed (assumes Zxyabc sequence)
-#define MOTORS		4			// number of motors on the board
-#define COORDS		6			// number of supported coordinate systems (1-6)
-#define PWMS		2			// number of supported PWM channels
-
-// Note: If you change COORDS you must adjust the entries in cfgArray table in config.c
+// 注意： 如果你改变了 COORDS 你必须调整config.c中的cfgArray表格中的入口。
 
 #define AXIS_X		0
 #define AXIS_Y		1
@@ -203,12 +202,12 @@ typedef uint16_t magic_t;		// magic number size
 #define AXIS_A		3
 #define AXIS_B		4
 #define AXIS_C		5
-#define AXIS_U		6			// reserved
-#define AXIS_V		7			// reserved
-#define AXIS_W		8			// reserved
+#define AXIS_U		6			// 保留 
+#define AXIS_V		7			// 保留
+#define AXIS_W		8			// 保留
 
-#define MOTOR_1		0 			// define motor numbers and array indexes
-#define MOTOR_2		1			// must be defines. enums don't work
+#define MOTOR_1		0 			// 定义电机号码和数组索引
+#define MOTOR_2		1			// 必须被定义。枚举不起作用
 #define MOTOR_3		2
 #define MOTOR_4		3
 #define MOTOR_5		4
@@ -218,80 +217,78 @@ typedef uint16_t magic_t;		// magic number size
 #define PWM_2		1
 
 /************************************************************************************
- * STATUS CODES
+ * 状态码 
  *
- * The first code range (0-19) is aligned with the XIO codes and must be so.
- * Please don't change them without checking the corresponding values in xio.h
+ * 第一个代码范围(0-19)是和XIO codes对齐的，且必须要这样做。
+ * 请不要在没有检查xio.h中的相关值的情况下改动它们
  *
- * Status codes are divided into ranges for clarity and extensibility. At some point
- * this may break down and the whole thing will get messy(er), but it's advised not
- * to change the values of existing status codes once they are in distribution.
+ * 状态码被分成几个范围，为了更好的分类和扩展。在某些情况下，这可能会导致更加混乱，但是一旦
+ * 这些已存在的状态码已经处于分发出去的状态的时候，明智的做法是不要去改变这些值。
  *
- * Ranges are:
+ * 范围是:
  *
- *	 0 - 19		OS, communications and low-level status (must align with XIO_xxxx codes in xio.h)
+ *	 0 - 19		OS,通讯和底层状态（必须和xio.h中的XIO_xxx 码对齐）
  *
- *  20 - 99		Generic internal and application errors. Internal errors start at 20 and work up,
+ *  20 - 99		普通内部错误和应用程序错误。内部错误从20开始，且
+ * 				Generic internal and application errors. Internal errors start at 20 and work up,
  *				Assertion failures start at 99 and work down.
  *
- * 100 - 129	Generic data and input errors - not specific to Gcode or TinyG
+ * 100 - 129	普通数据和输入错误 - 未指定Generic data and input errors - not specific to Gcode or TinyG
  *
- * 130 -		Gcode and TinyG application errors and warnings
+ * 130 -		G代码和TinyG 应用程序错误和警告
  *
- * See main.c for associated message strings. Any changes to the codes may also require
- * changing the message strings and string array in main.c
+ * 可以在main.c中查看关联的消息字符串。有关状态码的改变都需要同时修改main.c中字符串数组中的消息字符串。
  *
- * Most of the status codes (except STAT_OK) below are errors which would fail the command,
- * and are returned by the failed command and reported back via JSON or text.
- * Some status codes are warnings do not fail the command. These can be used to generate
- * an exception report. These are labeled as WARNING
+ * 大多数下方的的状态码（除了STAT_OK)都是会导致命令失败的错误，且都会由失败命令返回并通过JSON格式或者
+ * text格式输出报告。
+ * 一些状态码是警告且不会导致命令失败。这些可以用来生成异常报告。它们都用WARNING做为标签
  */
 
 typedef uint8_t stat_t;
-extern stat_t status_code;				// allocated in main.c
+extern stat_t status_code;				// 在 main.c 中分配了
 
-#define MESSAGE_LEN 80					// global message string storage allocation
-extern char global_string_buf[];				// allocated in main.c
+#define MESSAGE_LEN 80					// 全局信息字符串存储
+extern char global_string_buf[];				// 在main.c中分配了
 
 char *get_status_message(stat_t status);
 
-// ritorno is a handy way to provide exception returns
-// It returns only if an error occurred. (ritorno is Italian for return)
+// ritorno是一个非常方便提供异常返回的方法
+// 它只在错误发生的时候才返回(ritorno是意大利文的return的意思)
 #define ritorno(a) if((status_code=a) != STAT_OK) { return(status_code); }
 
-// OS, communications and low-level status (must align with XIO_xxxx codes in xio.h)
-#define	STAT_OK 0						// function completed OK
-#define	STAT_ERROR 1					// generic error return (EPERM)
-#define	STAT_EAGAIN 2					// function would block here (call again)
-#define	STAT_NOOP 3						// function had no-operation
-#define	STAT_COMPLETE 4					// operation is complete
-#define STAT_TERMINATE 5				// operation terminated (gracefully)
+// OS, 通讯和底层状态（必须和xio.h中的XIO_xxxx(XioCode枚举)代码对齐)
+#define	STAT_OK 0						// 函数正常执行完成 
+#define	STAT_ERROR 1					// 通用错误返回(EPERM)
+#define	STAT_EAGAIN 2					// 函数将堵塞在这里(再次调用)
+#define	STAT_NOOP 3						// 函数没有进行操作
+#define	STAT_COMPLETE 4					// 操作完成
+#define STAT_TERMINATE 5				// 操作终止(gracefully)
 #define STAT_RESET 6					// operation was hard reset (sig kill)
-#define	STAT_EOL 7						// function returned end-of-line
-#define	STAT_EOF 8						// function returned end-of-file
+#define	STAT_EOL 7						// 函数返回行结束  end-of-line
+#define	STAT_EOF 8						// 函数返回文件结束end-of-file
 #define	STAT_FILE_NOT_OPEN 9
 #define	STAT_FILE_SIZE_EXCEEDED 10
 #define	STAT_NO_SUCH_DEVICE 11
 #define	STAT_BUFFER_EMPTY 12
 #define	STAT_BUFFER_FULL 13
 #define	STAT_BUFFER_FULL_FATAL 14
-#define	STAT_INITIALIZING 15			// initializing - not ready for use
-#define	STAT_ENTERING_BOOT_LOADER 16	// this code actually emitted from boot loader, not TinyG
+#define	STAT_INITIALIZING 15			// 初始化中，还未准备好可以使用 
+#define	STAT_ENTERING_BOOT_LOADER 16	// 这个码实际上是从boot loader中发出，而不是TinyG
 #define	STAT_FUNCTION_IS_STUBBED 17
 #define	STAT_ERROR_18 18
-#define	STAT_ERROR_19 19				// NOTE: XIO codes align to here
+#define	STAT_ERROR_19 19				// 注意：XIO 码对齐到这里
 
-// Internal errors and startup messages
-#define	STAT_INTERNAL_ERROR 20			// unrecoverable internal error
-#define	STAT_INTERNAL_RANGE_ERROR 21	// number range other than by user input
-#define	STAT_FLOATING_POINT_ERROR 22	// number conversion error
+// 内部错误和启动信息
+#define	STAT_INTERNAL_ERROR 20			// 不可恢复内部错误
+#define	STAT_INTERNAL_RANGE_ERROR 21	// 用户输入数值范围不符
+#define	STAT_FLOATING_POINT_ERROR 22	// 数值转化错误
 #define	STAT_DIVIDE_BY_ZERO 23
 #define	STAT_INVALID_ADDRESS 24
 #define	STAT_READ_ONLY_ADDRESS 25
 #define	STAT_INIT_FAIL 26
 #define	STAT_ALARMED 27
 #define	STAT_FAILED_TO_GET_PLANNER_BUFFER 28
-#define STAT_GENERIC_EXCEPTION_REPORT 29	// used for test
+#define STAT_GENERIC_EXCEPTION_REPORT 29	// 用于测试 
 
 #define	STAT_PREP_LINE_MOVE_TIME_IS_INFINITE 30
 #define	STAT_PREP_LINE_MOVE_TIME_IS_NAN 31
@@ -360,6 +357,7 @@ char *get_status_message(stat_t status);
 #define	STAT_ERROR_89 89
 
 // Assertion failures - build down from 99 until they meet the system internal errors
+// 校验失败 - 
 
 #define	STAT_CONFIG_ASSERTION_FAILURE 90
 #define	STAT_XIO_ASSERTION_FAILURE 91
@@ -369,27 +367,27 @@ char *get_status_message(stat_t status);
 #define	STAT_CANONICAL_MACHINE_ASSERTION_FAILURE 95
 #define	STAT_CONTROLLER_ASSERTION_FAILURE 96
 #define	STAT_STACK_OVERFLOW 97
-#define	STAT_MEMORY_FAULT 98					// generic memory corruption detected by magic numbers
-#define	STAT_GENERIC_ASSERTION_FAILURE 99		// generic assertion failure - unclassified
+#define	STAT_MEMORY_FAULT 98					// 被“魔法数”捕获的通用内存错误
+#define	STAT_GENERIC_ASSERTION_FAILURE 99		// 通用校验失败-unclassified
 
-// Application and data input errors
+// 程序和数据输入错误 
 
-// Generic data input errors
-#define	STAT_UNRECOGNIZED_NAME 100              // parser didn't recognize the name
-#define	STAT_INVALID_OR_MALFORMED_COMMAND 101   // malformed line to parser
-#define	STAT_BAD_NUMBER_FORMAT 102              // number format error
+// 通用数据输入错误
+#define	STAT_UNRECOGNIZED_NAME 100              // 解析器无法识别名字
+#define	STAT_INVALID_OR_MALFORMED_COMMAND 101   // 解析器捕获无效或未识别的行
+#define	STAT_BAD_NUMBER_FORMAT 102              // 数字格式错误
 #define	STAT_UNSUPPORTED_TYPE 103               // An otherwise valid number or JSON type is not supported
-#define	STAT_PARAMETER_IS_READ_ONLY 104         // input error: parameter cannot be set
-#define	STAT_PARAMETER_CANNOT_BE_READ 105       // input error: parameter cannot be set
-#define	STAT_COMMAND_NOT_ACCEPTED 106			// command cannot be accepted at this time
-#define	STAT_INPUT_EXCEEDS_MAX_LENGTH 107       // input string is too long
-#define	STAT_INPUT_LESS_THAN_MIN_VALUE 108      // input error: value is under minimum
-#define	STAT_INPUT_EXCEEDS_MAX_VALUE 109        // input error: value is over maximum
+#define	STAT_PARAMETER_IS_READ_ONLY 104         // 输入错误：参数不能被设置
+#define	STAT_PARAMETER_CANNOT_BE_READ 105       // 输入错误：参数不能被设置
+#define	STAT_COMMAND_NOT_ACCEPTED 106			// 命令在此时不能够被接受
+#define	STAT_INPUT_EXCEEDS_MAX_LENGTH 107       // 输入字符串过长
+#define	STAT_INPUT_LESS_THAN_MIN_VALUE 108      // 输入错误：数值低于最小值
+#define	STAT_INPUT_EXCEEDS_MAX_VALUE 109        // 输入错误：数值大于最大值
 
-#define	STAT_INPUT_VALUE_RANGE_ERROR 110        // input error: value is out-of-range
-#define	STAT_JSON_SYNTAX_ERROR 111              // JSON input string is not well formed
-#define	STAT_JSON_TOO_MANY_PAIRS 112            // JSON input string has too many JSON pairs
-#define	STAT_JSON_TOO_LONG 113					// JSON input or output exceeds buffer size
+#define	STAT_INPUT_VALUE_RANGE_ERROR 110        // 输入错误：数值超过范围
+#define	STAT_JSON_SYNTAX_ERROR 111              // JSON输入字符串没有被完全格式化 
+#define	STAT_JSON_TOO_MANY_PAIRS 112            // JSON输入字符串有太多JSON对
+#define	STAT_JSON_TOO_LONG 113					// JSON输入或者输出超过缓冲大小
 #define	STAT_ERROR_114 114
 #define	STAT_ERROR_115 115
 #define	STAT_ERROR_116 116
@@ -408,26 +406,26 @@ char *get_status_message(stat_t status);
 #define	STAT_ERROR_128 128
 #define	STAT_ERROR_129 129
 
-// Gcode errors and warnings (Most originate from NIST - by concept, not number)
+// G代码错误和警告(大多数都是源于NIST - 指的是它的概念不是这里的号码数字)
 // Fascinating: http://www.cncalarms.com/
 
-#define	STAT_GCODE_GENERIC_INPUT_ERROR 130				// generic error for gcode input
-#define	STAT_GCODE_COMMAND_UNSUPPORTED 131				// G command is not supported
-#define	STAT_MCODE_COMMAND_UNSUPPORTED 132				// M command is not supported
-#define	STAT_GCODE_MODAL_GROUP_VIOLATION 133			// gcode modal group error
-#define	STAT_GCODE_AXIS_IS_MISSING 134					// command requires at least one axis present
-#define STAT_GCODE_AXIS_CANNOT_BE_PRESENT 135			// error if G80 has axis words
-#define STAT_GCODE_AXIS_IS_INVALID 136					// an axis is specified that is illegal for the command
-#define STAT_GCODE_AXIS_IS_NOT_CONFIGURED 137			// WARNING: attempt to program an axis that is disabled
-#define STAT_GCODE_AXIS_NUMBER_IS_MISSING 138			// axis word is missing its value
-#define STAT_GCODE_AXIS_NUMBER_IS_INVALID 139	 		// axis word value is illegal
+#define	STAT_GCODE_GENERIC_INPUT_ERROR 130				// 通用G代码输入错误
+#define	STAT_GCODE_COMMAND_UNSUPPORTED 131				// G代码命令不支持
+#define	STAT_MCODE_COMMAND_UNSUPPORTED 132				// M代码命令不支持
+#define	STAT_GCODE_MODAL_GROUP_VIOLATION 133			// G代码模型组错误
+#define	STAT_GCODE_AXIS_IS_MISSING 134					// 命令需要至少有一个轴作为参数
+#define STAT_GCODE_AXIS_CANNOT_BE_PRESENT 135			// 如果G80带有轴作为参数，则出错
+#define STAT_GCODE_AXIS_IS_INVALID 136					// 为命令指定了一个不合法的轴
+#define STAT_GCODE_AXIS_IS_NOT_CONFIGURED 137			// 警告：尝试去编程一个被关闭(disable)的轴
+#define STAT_GCODE_AXIS_NUMBER_IS_MISSING 138			// 轴缺少数值
+#define STAT_GCODE_AXIS_NUMBER_IS_INVALID 139	 		// 轴的数值不合法
 
-#define STAT_GCODE_ACTIVE_PLANE_IS_MISSING 140			// active plane is not programmed
-#define STAT_GCODE_ACTIVE_PLANE_IS_INVALID 141			// active plane selected is not valid for this command
-#define	STAT_GCODE_FEEDRATE_NOT_SPECIFIED 142			// move has no feedrate
-#define STAT_GCODE_INVERSE_TIME_MODE_CANNOT_BE_USED 143	// G38.2 and some canned cycles cannot accept inverse time mode
-#define STAT_GCODE_ROTARY_AXIS_CANNOT_BE_USED 144		// G38.2 and some other commands cannot have rotary axes
-#define STAT_GCODE_G53_WITHOUT_G0_OR_G1 145				// G0 or G1 must be active for G53
+#define STAT_GCODE_ACTIVE_PLANE_IS_MISSING 140			// 生效平面还未被指定
+#define STAT_GCODE_ACTIVE_PLANE_IS_INVALID 141			// 生效平面对于当前命令是无效的
+#define	STAT_GCODE_FEEDRATE_NOT_SPECIFIED 142			// 移动没有指定进给
+#define STAT_GCODE_INVERSE_TIME_MODE_CANNOT_BE_USED 143	// G38.2 和其他一些 canned cycles不能接受inverse time模式
+#define STAT_GCODE_ROTARY_AXIS_CANNOT_BE_USED 144		// G38.2 和其他的一些命令不能有旋转轴
+#define STAT_GCODE_G53_WITHOUT_G0_OR_G1 145				// G0 或者 G1必须在G53下生效
 #define STAT_REQUESTED_VELOCITY_EXCEEDS_LIMITS 146
 #define STAT_CUTTER_COMPENSATION_CANNOT_BE_ENABLED 147
 #define STAT_PROGRAMMED_POINT_SAME_AS_CURRENT_POINT 148
@@ -437,18 +435,18 @@ char *get_status_message(stat_t status);
 #define	STAT_S_WORD_IS_MISSING 151
 #define	STAT_S_WORD_IS_INVALID 152
 #define	STAT_SPINDLE_MUST_BE_OFF 153
-#define	STAT_SPINDLE_MUST_BE_TURNING 154				// some canned cycles require spindle to be turning when called
-#define	STAT_ARC_SPECIFICATION_ERROR 155				// generic arc specification error
-#define STAT_ARC_AXIS_MISSING_FOR_SELECTED_PLANE 156	// arc is missing axis (axes) required by selected plane
-#define STAT_ARC_OFFSETS_MISSING_FOR_SELECTED_PLANE 157 // one or both offsets are not specified
-#define STAT_ARC_RADIUS_OUT_OF_TOLERANCE 158			// WARNING - radius arc is too small or too large - accuracy in question
+#define	STAT_SPINDLE_MUST_BE_TURNING 154				// 一些固定循环在调用时需要主轴被开启
+#define	STAT_ARC_SPECIFICATION_ERROR 155				// 通用弧线参数错误
+#define STAT_ARC_AXIS_MISSING_FOR_SELECTED_PLANE 156	// 当前选择平面，圆弧缺少对应的轴
+#define STAT_ARC_OFFSETS_MISSING_FOR_SELECTED_PLANE 157 // 一个或者多个偏移没有被指定
+#define STAT_ARC_RADIUS_OUT_OF_TOLERANCE 158			// 警告 - 圆弧半径过小或者过大 - 精度存在问题
 #define STAT_ARC_ENDPOINT_IS_STARTING_POINT 159
 
-#define STAT_P_WORD_IS_MISSING 160						// P must be present for dwells and other functions
-#define STAT_P_WORD_IS_INVALID 161						// generic P value error
+#define STAT_P_WORD_IS_MISSING 160						// 在dwell或者其他功能中P值必须指定
+#define STAT_P_WORD_IS_INVALID 161						// 通用P值错误
 #define STAT_P_WORD_IS_ZERO 162
-#define STAT_P_WORD_IS_NEGATIVE 163						// dwells require positive P values
-#define STAT_P_WORD_IS_NOT_AN_INTEGER 164				// G10s and other commands require integer P numbers
+#define STAT_P_WORD_IS_NEGATIVE 163						// dewlls 请求正数的P值
+#define STAT_P_WORD_IS_NOT_AN_INTEGER 164				// G10s 和其他命令需要整数的P值
 #define STAT_P_WORD_IS_NOT_VALID_TOOL_NUMBER 165
 #define STAT_D_WORD_IS_MISSING 166
 #define STAT_D_WORD_IS_INVALID 167
@@ -466,7 +464,7 @@ char *get_status_message(stat_t status);
 #define STAT_T_WORD_IS_MISSING 178
 #define STAT_T_WORD_IS_INVALID 179
 
-#define	STAT_ERROR_180 180									// reserved for Gcode errors
+#define	STAT_ERROR_180 180									// 为G代码错误保留 
 #define	STAT_ERROR_181 181
 #define	STAT_ERROR_182 182
 #define	STAT_ERROR_183 183
@@ -488,13 +486,13 @@ char *get_status_message(stat_t status);
 #define	STAT_ERROR_198 198
 #define	STAT_ERROR_199 199
 
-// TinyG errors and warnings
+// TinyG 错误和警告 
 
 #define STAT_GENERIC_ERROR 200
-#define	STAT_MINIMUM_LENGTH_MOVE 201					// move is less than minimum length
-#define	STAT_MINIMUM_TIME_MOVE 202						// move is less than minimum time
-#define	STAT_MACHINE_ALARMED 203						// machine is alarmed. Command not processed
-#define	STAT_LIMIT_SWITCH_HIT 204						// a limit switch was hit causing shutdown
+#define	STAT_MINIMUM_LENGTH_MOVE 201					// 移动小于最小长度 
+#define	STAT_MINIMUM_TIME_MOVE 202						// 移动小于最小时间
+#define	STAT_MACHINE_ALARMED 203						// 机器处于警报状态。命令没有被执行
+#define	STAT_LIMIT_SWITCH_HIT 204						// 限位开被处罚导致停止
 #define	STAT_PLANNER_FAILED_TO_CONVERGE 205				// trapezoid generator can through this exception
 #define	STAT_ERROR_206 206
 #define	STAT_ERROR_207 207
@@ -512,20 +510,20 @@ char *get_status_message(stat_t status);
 #define	STAT_ERROR_218 218
 #define	STAT_ERROR_219 219
 
-#define	STAT_SOFT_LIMIT_EXCEEDED 220					// soft limit error - axis unspecified
-#define	STAT_SOFT_LIMIT_EXCEEDED_XMIN 221				// soft limit error - X minimum
-#define	STAT_SOFT_LIMIT_EXCEEDED_XMAX 222				// soft limit error - X maximum
-#define	STAT_SOFT_LIMIT_EXCEEDED_YMIN 223				// soft limit error - Y minimum
-#define	STAT_SOFT_LIMIT_EXCEEDED_YMAX 224				// soft limit error - Y maximum
-#define	STAT_SOFT_LIMIT_EXCEEDED_ZMIN 225				// soft limit error - Z minimum
-#define	STAT_SOFT_LIMIT_EXCEEDED_ZMAX 226				// soft limit error - Z maximum
-#define	STAT_SOFT_LIMIT_EXCEEDED_AMIN 227				// soft limit error - A minimum
-#define	STAT_SOFT_LIMIT_EXCEEDED_AMAX 228				// soft limit error - A maximum
-#define	STAT_SOFT_LIMIT_EXCEEDED_BMIN 229				// soft limit error - B minimum
+#define	STAT_SOFT_LIMIT_EXCEEDED 220					// 软限位错误 - 轴未指定
+#define	STAT_SOFT_LIMIT_EXCEEDED_XMIN 221				// 软限位错误 - X最小
+#define	STAT_SOFT_LIMIT_EXCEEDED_XMAX 222				// 软限位错误 - X最大
+#define	STAT_SOFT_LIMIT_EXCEEDED_YMIN 223				// 软限位错误 - Y最小
+#define	STAT_SOFT_LIMIT_EXCEEDED_YMAX 224				// 软限位错误 - Y最大
+#define	STAT_SOFT_LIMIT_EXCEEDED_ZMIN 225				// 软限位错误 - Z最小
+#define	STAT_SOFT_LIMIT_EXCEEDED_ZMAX 226				// 软限位错误 - Z最大
+#define	STAT_SOFT_LIMIT_EXCEEDED_AMIN 227				// 软限位错误 - A最小
+#define	STAT_SOFT_LIMIT_EXCEEDED_AMAX 228				// 软限位错误 - A最大
+#define	STAT_SOFT_LIMIT_EXCEEDED_BMIN 229				// 软限位错误 - B最小
 
-#define	STAT_SOFT_LIMIT_EXCEEDED_BMAX 220				// soft limit error - B maximum
-#define	STAT_SOFT_LIMIT_EXCEEDED_CMIN 231				// soft limit error - C minimum
-#define	STAT_SOFT_LIMIT_EXCEEDED_CMAX 232				// soft limit error - C maximum
+#define	STAT_SOFT_LIMIT_EXCEEDED_BMAX 220				// 软限位错误 - B最大
+#define	STAT_SOFT_LIMIT_EXCEEDED_CMIN 231				// 软限位错误 - C最小
+#define	STAT_SOFT_LIMIT_EXCEEDED_CMAX 232				// 软限位错误 - C最大
 #define	STAT_ERROR_233 233
 #define	STAT_ERROR_234 234
 #define	STAT_ERROR_235 235
@@ -534,7 +532,7 @@ char *get_status_message(stat_t status);
 #define	STAT_ERROR_238 238
 #define	STAT_ERROR_239 239
 
-#define	STAT_HOMING_CYCLE_FAILED 240					// homing cycle did not complete
+#define	STAT_HOMING_CYCLE_FAILED 240					// 归位循环未完成
 #define	STAT_HOMING_ERROR_BAD_OR_NO_AXIS 241
 #define	STAT_HOMING_ERROR_ZERO_SEARCH_VELOCITY 242
 #define	STAT_HOMING_ERROR_ZERO_LATCH_VELOCITY 243
@@ -545,10 +543,10 @@ char *get_status_message(stat_t status);
 #define	STAT_ERROR_248 248
 #define	STAT_ERROR_249 249
 
-#define	STAT_PROBE_CYCLE_FAILED 250						// probing cycle did not complete
+#define	STAT_PROBE_CYCLE_FAILED 250						// 对刀循环未完成 
 #define STAT_PROBE_ENDPOINT_IS_STARTING_POINT 251
-#define	STAT_JOGGING_CYCLE_FAILED 252					// jogging cycle did not complete
+#define	STAT_JOGGING_CYCLE_FAILED 252					// 手轮引导未完成
 
-// !!! Do not exceed 255 without also changing stat_t typedef
+// !!! 不要在没有同时修改stat_t 定义的时候超过255
 
 #endif // End of include guard: TINYG2_H_ONCE

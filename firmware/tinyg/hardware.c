@@ -86,21 +86,21 @@ void hardware_init()
 }
 
 /*
- * _get_id() - get a human readable signature
+ * _get_id() - 获取一个便于用户识别的签名
  *
- * FOR AVR:
- *	Produce a unique deviceID based on the factory calibration data.
- *		Format is: 123456-ABC
+ * 对AVR而已：
+ * 唯一设备ID是基于工厂校准数据来生成的.
+ * 		格式是：12345-ABC
  *
- *	The number part is a direct readout of the 6 digit lot number
- *	The alpha is the low 5 bits of wafer number and XY coords in printable ASCII
- *	Refer to NVM_PROD_SIGNATURES_t in iox192a3.h for details.
+ *  数字部分是直接从6位批号码中读取出来的
+ *  字母部分是wafer number和XY coords的低5位
+ *	有关细节参考 iox192a3.h 中的NVM_PROD_SIGNATURES_t
  *
- * FOR ARM:
- *	Currently not implemented
+ * 对于ARM而言：
+ *  当前还没有实现
  */
 
-/* UNUSED
+/* 未使用 
 static uint8_t _read_calibration_byte(uint8_t index)
 {
 	NVM_CMD = NVM_NV_READ_CALIB_ROW_gc; 	// Load NVM Command register to read the calibration row

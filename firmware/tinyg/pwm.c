@@ -40,18 +40,18 @@
 extern "C"{
 #endif
 
-/***** PWM defines, structures and memory allocation *****/
+/***** PWM定义，结构体和内存分配 *****/
 
 pwmSingleton_t pwm;
 
-// defines common to all PWM channels
+// 为所有PWM通道定义通用参数
 //#define PWM_TIMER_TYPE	TC1_struct	// PWM uses TC1's
 #define PWM_TIMER_t	TC1_t				// PWM uses TC1's
-#define PWM_TIMER_DISABLE 0				// turn timer off (clock = 0 Hz)
-#define PWM_MAX_FREQ (F_CPU/256)		// max frequency with 8-bits duty cycle precision
-#define PWM_MIN_FREQ (F_CPU/64/65536)	// min frequency with supported prescaling
+#define PWM_TIMER_DISABLE 0				// 关闭定时器 (clock = 0 Hz)
+#define PWM_MAX_FREQ (F_CPU/256)		// 以8位周期精度的最大频率
+#define PWM_MIN_FREQ (F_CPU/64/65536)	// 在预分频器支持下的最小频率
 
-// channel specific defines
+// 通道特定定义
 /* CLKSEL is used to configure default PWM clock operating ranges
  * These can be changed by pwm_freq() depending on the PWM frequency selected
  *
@@ -62,41 +62,41 @@ pwmSingleton_t pwm;
  *	 TC_CLKSEL_DIV8_gc  - good for about  62 Hz to  16 KHz
  *	 TC_CLKSEL_DIV64_gc - good for about   8 Hz to   2 Khz
  */
-#define PWM1_CTRLA_CLKSEL	TC_CLKSEL_DIV1_gc	// starting clock select value
+#define PWM1_CTRLA_CLKSEL	TC_CLKSEL_DIV1_gc	// 初始时钟值 
 #define PWM1_CTRLB 			(3 | TC0_CCBEN_bm)	// single slope PWM enabled on channel B
-#define PWM1_ISR_vect 		TCD1_CCB_vect		// must match timer assignments in system.h
-#define PWM1_INTCTRLB		0					// timer interrupt level (0=off, 1=lo, 2=med, 3=hi)
+#define PWM1_ISR_vect 		TCD1_CCB_vect		// 必须和system.h中的定时器分配匹配
+#define PWM1_INTCTRLB		0					// 定时器中断优先级(o=关闭 1=低 2=中 3=高)
 
 #define PWM2_CTRLA_CLKSEL 	TC_CLKSEL_DIV1_gc
 #define PWM2_CTRLB 			3					// single slope PWM enabled, no output channel
 //#define PWM2_CTRLB 		(3 | TC0_CCBEN_bm)	// single slope PWM enabled on channel B
-#define PWM2_ISR_vect		TCE1_CCB_vect		// must match timer assignments in system.h
-#define PWM2_INTCTRLB		0					// timer interrupt level (0=off, 1=lo, 2=med, 3=hi)
+#define PWM2_ISR_vect		TCE1_CCB_vect		// 必须和system.h中的定时器分配匹配
+#define PWM2_INTCTRLB		0					// 定时器中断优先级(o=关闭 1=低 2=中 3=高)
 
-/***** PWM code *****/
+/***** PWM代码 *****/
 /*
- * pwm_init() - initialize pwm channels
+ * pwm_init() - 初始化pwm通道
  *
- *	Notes:
- *	  - Whatever level interrupts you use must be enabled in main()
- *	  - init assumes PWM1 output bit (D5) has been set to output previously (stepper.c)
- *	  - See system.h for timer and port assignments
- *    - Don't do this: memset(&TIMER_PWM1, 0, sizeof(PWM_TIMER_t)); // zero out the timer registers
+ * 注意：
+ * 	  - 不管你使用哪个中断优先级的，你都必须在main()中使能
+ * 	  - 初始化假设PWM1输出位 (D5)已经在之前设置为输出(stepper.c)
+ * 	  - 查看system.h 关于定时器和端口分配
+ *    - 不要使用这个memset(&TIMER_PWM1, 0, sizeof(PWM_TIMER_t)); // 初始化定时器寄存器
  */
 void pwm_init()
 {
 #ifdef __AVR
 	gpio_set_bit_off(SPINDLE_PWM);
 
-	// setup PWM channel 1
-	memset(&pwm.p[PWM_1], 0, sizeof(pwmChannel_t));		// clear parent structure
-	pwm.p[PWM_1].timer = &TIMER_PWM1;					// bind timer struct to PWM struct array
-	pwm.p[PWM_1].ctrla = PWM1_CTRLA_CLKSEL;				// initialize starting clock operating range
+	// 设置PWM通道1 
+	memset(&pwm.p[PWM_1], 0, sizeof(pwmChannel_t));		// 清除父结构体 
+	pwm.p[PWM_1].timer = &TIMER_PWM1;					// 绑定定时器结构到PWM结构体数组
+	pwm.p[PWM_1].ctrla = PWM1_CTRLA_CLKSEL;				// 初始化开始的时钟操作范围
 	pwm.p[PWM_1].timer->CTRLB = PWM1_CTRLB;
-	pwm.p[PWM_1].timer->INTCTRLB = PWM1_INTCTRLB;		// set interrupt level
+	pwm.p[PWM_1].timer->INTCTRLB = PWM1_INTCTRLB;		// 设置中断优先级 
 
-	// setup PWM channel 2
-	memset(&pwm.p[PWM_2], 0, sizeof(pwmChannel_t));		// clear all values, pointers and status
+	// 设置PWM通道2 
+	memset(&pwm.p[PWM_2], 0, sizeof(pwmChannel_t));		// 清除所有值，指针和状态
 	pwm.p[PWM_2].timer = &TIMER_PWM2;
 	pwm.p[PWM_2].ctrla = PWM2_CTRLA_CLKSEL;
 	pwm.p[PWM_2].timer->CTRLB = PWM2_CTRLB;
@@ -149,7 +149,7 @@ stat_t pwm_set_freq(uint8_t chan, float freq)
 	if (freq < PWM_MIN_FREQ) { return (STAT_INPUT_LESS_THAN_MIN_VALUE);}
 
 #ifdef __AVR
-	// set the period and the prescaler
+	// 设置周期和预分频器
 	float prescale = F_CPU/65536/freq;	// optimal non-integer prescaler value
 	if (prescale <= 1) {
 		pwm.p[chan].timer->PER = F_CPU/freq;
@@ -218,16 +218,16 @@ stat_t pwm_set_duty(uint8_t chan, float duty)
 
 
 /***********************************************************************************
- * CONFIGURATION AND INTERFACE FUNCTIONS
- * Functions to get and set variables from the cfgArray table
+ * 配置和接口函数
+ * 用于设置和获取cfgArray表格中的值的函数
  ***********************************************************************************/
 
-// none
+// 空 
 
 
 /***********************************************************************************
- * TEXT MODE SUPPORT
- * Functions to print variables from the cfgArray table
+ * 文本模式支持 
+ * 用于输出cfgArray表格中的值
  ***********************************************************************************/
 
 #ifdef __TEXT_MODE
