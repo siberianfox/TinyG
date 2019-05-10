@@ -28,7 +28,7 @@
  * is supported. To use this sub-system outside of TinyG you may need
  * some defines in tinyg.h. See notes at end of this file for more details.
  */
-/* Note: anything that includes xio.h first needs the following:
+/* Note: 任何包含xio.h的地方都需要先按以下进行include 
  * 	#include <stdio.h>				// needed for FILE def'n
  *	#include <stdbool.h>			// needed for true and false
  *	#include <avr/pgmspace.h>		// defines prog_char, PSTR
@@ -41,7 +41,6 @@
  *	(possibly more)
  */
 /*
- * CAVEAT EMPTOR: File under "watch your ass":
  * 警告买家：需要非常小心注意的文件
  *
  *    - 简短叙述：切勿在中优先级中断或者高优先级中断中调用任何会打印输出的函数(例如发送字符串

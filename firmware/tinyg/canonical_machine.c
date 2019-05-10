@@ -704,7 +704,7 @@ static void _exec_offset(float *value, float *flag)
  *	This is useful for setting origins for homing, probing, and other operations.
  *
  *  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- *	!!!!! DO NOT CALL THIS FUNCTION WHILE IN A MACHINING CYCLE !!!!!
+ *	!!!!!            不要在机器循环启动期间调用该函数             !!!!!
  *  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  *
  *	More specifically, do not call this function if there are any moves in the planner or
@@ -978,8 +978,9 @@ stat_t cm_straight_feed(float target[], float flags[])
  * _exec_select_tool()	- 执行回调
  *
  * cm_change_tool()		- M6 (This might become a complete tool change cycle)
- * _exec_change_tool()	- execution callback
+ * _exec_change_tool()	- 执行回调 
  *
+ * 注意： 这些函数还未实际能做什么东西，并且还有bug————在T和M在不同的block时，不能正确工作
  * Note: These functions don't actually do anything for now, and there's a bug
  *		 where T and M in different blocks don;t work correctly
  */
@@ -1011,8 +1012,8 @@ static void _exec_change_tool(float *value, float *flag)
  * 其他功能 (4.3.9) *
  ***********************************/
 /*
- * cm_mist_coolant_control() - M7
- * cm_flood_coolant_control() - M8, M9
+ * cm_mist_coolant_control() - M7 水冷开
+ * cm_flood_coolant_control() - M8, M9 冷却液开，关闭所有水冷
  */
 
 stat_t cm_mist_coolant_control(uint8_t mist_coolant)
@@ -1078,8 +1079,8 @@ static void _exec_flood_coolant_control(float *value, float *flag)
  * cm_spindle_override_enable() - M51
  * cm_spindle_override_factor() - M51.1
  *
- *	Override enables are kind of a mess in Gcode. This is an attempt to sort them out.
- *	See http://www.linuxcnc.org/docs/2.4/html/gcode_main.html#sec:M50:-Feed-Override
+ *	修调使能（Override enables）在G代码中有一些混乱。这里尝试将它们归类。 
+ *	查看 http://www.linuxcnc.org/docs/2.4/html/gcode_main.html#sec:M50:-Feed-Override
  */
 
 stat_t cm_override_enables(uint8_t flag)			// M48, M49
@@ -1145,22 +1146,22 @@ stat_t cm_spindle_override_factor(uint8_t flag)		// M50.1
 }
 
 /*
- * cm_message() - queue a RAM string as a message in the response (unconditionally)
+ * cm_message() - 将一个内存字符串作为反馈消息进行入队（无条件地）
  *
- *	Note: If you need to post a FLASH string use pstr2str to convert it to a RAM string
+ *	注意：如果你需要输出一个存储在FLASH中的字符串，使用pstr2str将其转化为内存字符串(只针对AVR系列)
  */
 
 void cm_message(char_t *message)
 {
-	nv_add_string((const char_t *)"msg", message);	// add message to the response object
+	nv_add_string((const char_t *)"msg", message);	// 添加信息到反馈对象
 }
 
 /******************************
- * Program Functions (4.3.10) *
+ * 程序功能 (4.3.10) *
  ******************************/
 /*
- * This group implements stop, start, end, and hold.
- * It is extended beyond the NIST spec to handle various situations.
+ * 这一组实现了停止，开始，结束和保持的功能。
+ * 这是扩展的，不在NIST参数内的功能，用于处理各种状态。
  *
  *	_exec_program_finalize()
  *	cm_cycle_start()			(no Gcode)  Do a cycle start right now
@@ -1332,9 +1333,9 @@ static void _exec_program_finalize(float *value, float *flag)
 void cm_cycle_start()
 {
 	cm.machine_state = MACHINE_CYCLE;
-	if (cm.cycle_state == CYCLE_OFF) {					// don't (re)start homing, probe or other canned cycles
+	if (cm.cycle_state == CYCLE_OFF) {					// 不要（重新）开始归位，对刀或者其他循环 don't (re)start homing, probe or other canned cycles
 		cm.cycle_state = CYCLE_MACHINING;
-		qr_init_queue_report();							// clear queue reporting buffer counts
+		qr_init_queue_report();							// lear queue reporting buffer counts
 	}
 }
 
@@ -1538,7 +1539,7 @@ static int8_t _get_axis_type(const index_t index)
 	return (0);
 }
 
-/**** Functions called directly from cfgArray table - mostly wrappers ****
+/**** 从cfgArray 表格中直接调用的函数——大多数是wrappers ****
  * _get_msg_helper() - helper to get string values
  *
  * cm_get_stat() - get combined machine state as value and string
@@ -1694,13 +1695,10 @@ stat_t cm_set_am(nvObj_t *nv)		// axis mode
  *  加加速度的值可以非常大，通常是百万以上。这导致了需要我们来处理非常大的数字。加加速度以截断格式化存储在系统内
  *  数值被除以1,000,000，使用前需要进行重组。
  *
- *	set_xjm() 和 set_xjh() 函数可以接收截断或者未截断的加加速度值。如果输入值大于1,000,000，它
- 
- 	functions will accept either truncated or untruncated jerk
- *	numbers as input. If the number is > 1,000,000 it is divided by 1,000,000 before storing.
+ *	set_xjm() 和 set_xjh() 函数可以接收截断或者未截断的加加速度值。如果输入值大于1,000,000，将在存储前被除以1,000,000。
  *	Numbers are accepted in either millimeter or inch mode and converted to millimeter mode.
  *
- *	The axis_jerk() functions expect the jerk in divided-by 1,000,000 form
+ *	axis_jerk() 函数需要接收已经除以1,000,000的jerk值。
  */
 float cm_get_axis_jerk(uint8_t axis)
 {

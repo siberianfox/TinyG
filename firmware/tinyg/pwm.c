@@ -105,7 +105,7 @@ void pwm_init()
 }
 
 /*
- * ISRs for PWM timers
+ * PWM 定时器中断
  */
 #ifdef __AVR
 ISR(PWM1_ISR_vect)
@@ -133,12 +133,12 @@ ISR(PWM2_ISR_vect)
 #endif // __ARM
 */
 /*
- * pwm_set_freq() - set PWM channel frequency
+ * pwm_set_freq() - 设置PWM通道频率
  *
- *	channel	- PWM channel
- *	freq	- PWM frequency in Khz as a float
+ *	channel	- PWM通道 
+ *	freq	- PWM频率 单位为Khz，使用浮点数保存
  *
- *	Assumes 32MHz clock.
+ *	假设处于32MHz时钟
  *	Doesn't turn time on until duty cycle is set
  */
 
@@ -181,16 +181,16 @@ stat_t pwm_set_freq(uint8_t chan, float freq)
 }
 
 /*
- * pwm_set_duty() - set PWM channel duty cycle
+ * pwm_set_duty() - 设置PWM通道占空比
  *
- *	channel	- PWM channel
- *	duty	- PWM duty cycle from 0% to 100%
+ *	channel	- PWM 通道
+ *	duty	- PWM 占空比，从0%到100%
  *
- *	Setting duty cycle to 0 disables the PWM channel with output low
- *	Setting duty cycle to 100 disables the PWM channel with output high
- *	Setting duty cycle between 0 and 100 enables PWM channel
+ *  设置占空比为0，通过输出低电平关闭PWM通道
+ *  设置占空比到100，通过输出高电平来关闭PWM通道
+ * 	设置占空比为0到100之间来使能PWM通道
  *
- *	The frequency must have been set previously
+ *	频率必须在调用前设置好
  */
 
 stat_t pwm_set_duty(uint8_t chan, float duty)

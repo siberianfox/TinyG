@@ -27,6 +27,7 @@
 /*
  *	This GPIO file is where all parallel port bits are managed that are
  *	not already taken up by steppers, serial ports, SPI or PDI programming
+ *  这个GPIO文件是
  *
  *	There are 2 GPIO ports:
  *

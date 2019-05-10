@@ -45,8 +45,8 @@ extern "C"{
 #endif
 
 /*
- * _port_bindings  - bind XMEGA ports to hardware - these changed at board revision 7
- * hardware_init() - lowest level hardware init
+ * _port_bindings  - 端口绑定，绑定XMEGA端口到硬件 - these changed at board revision 7
+ * hardware_init() - 最低层硬件初始化
  */
 
 static void _port_bindings(float hw_version)
@@ -79,9 +79,9 @@ static void _port_bindings(float hw_version)
 void hardware_init()
 {
 #ifdef __AVR
-	xmega_init();							// set system clock
+	xmega_init();							// 设置系统时钟 
 	_port_bindings(TINYG_HARDWARE_VERSION);
-	rtc_init();								// real time counter
+	rtc_init();								// 实时时钟计数器 
 #endif
 }
 
@@ -143,24 +143,24 @@ static void _get_id(char_t *id)
 //	id[i++] = printable[(pgm_read_byte(COORDY1) & 0x1F)];
 	id[i] = 0;
 
-	NVM_CMD = NVM_CMD_NO_OPERATION_gc; 	 	// Clean up NVM Command register
+	NVM_CMD = NVM_CMD_NO_OPERATION_gc; 	 	// 清除 NVM  命令寄存器
 #endif
 }
 
 /*
- * Hardware Reset Handlers
+ * 硬件复位处理函数 
  *
  * hw_request_hard_reset()
- * hw_hard_reset()			- hard reset using watchdog timer
+ * hw_hard_reset()			- 使用看门狗定时器来进行硬复位
  * hw_hard_reset_handler()	- controller's rest handler
  */
 void hw_request_hard_reset() { cs.hard_reset_requested = true; }
 
-void hw_hard_reset(void)			// software hard reset using the watchdog timer
+void hw_hard_reset(void)			// 软件硬复位，使用看门狗定时器
 {
 #ifdef __AVR
 	wdt_enable(WDTO_15MS);
-	while (true);					// loops for about 15ms then resets
+	while (true);					// 循环大概15ms，然后复位
 #endif
 }
 
@@ -168,15 +168,15 @@ stat_t hw_hard_reset_handler(void)
 {
 	if (cs.hard_reset_requested == false)
         return (STAT_NOOP);
-	hw_hard_reset();				// hard reset - identical to hitting RESET button
+	hw_hard_reset();				// 硬复位 - 按到复位按钮触发
 	return (STAT_EAGAIN);
 }
 
 /*
- * Bootloader Handlers
+ * Bootloader 处理函数 
  *
  * hw_request_bootloader()
- * hw_request_bootloader_handler() - executes a software reset using CCPWrite
+ * hw_request_bootloader_handler() - 使用CCPWrite来完成软件复位
  */
 
 void hw_request_bootloader() { cs.bootloader_requested = true;}
@@ -187,21 +187,21 @@ stat_t hw_bootloader_handler(void)
 	if (cs.bootloader_requested == false)
         return (STAT_NOOP);
 	cli();
-	CCPWrite(&RST.CTRL, RST_SWRST_bm);  // fire a software reset
+	CCPWrite(&RST.CTRL, RST_SWRST_bm);  // 触发一个软件限位 
 #endif
-	return (STAT_EAGAIN);				// never gets here but keeps the compiler happy
+	return (STAT_EAGAIN);				// 永远不会到这里，但是让编译器保持happy，不提示warnning。
 }
 
-/***** END OF SYSTEM FUNCTIONS *****/
+/*****系统函数结束 *****/
 
 
 /***********************************************************************************
- * CONFIGURATION AND INTERFACE FUNCTIONS
- * Functions to get and set variables from the cfgArray table
+ * 配置和接口功能
+ * 用于从cfgArray表格中获取和设置值得函数
  ***********************************************************************************/
 
 /*
- * hw_get_id() - get device ID (signature)
+ * hw_get_id() - 获取设备id（签名） 
  */
 
 stat_t hw_get_id(nvObj_t *nv)
@@ -214,7 +214,7 @@ stat_t hw_get_id(nvObj_t *nv)
 }
 
 /*
- * hw_run_boot() - invoke boot form the cfgArray
+ * hw_run_boot() - 从cfgArray中唤起软件复位(bootloader)
  */
 stat_t hw_run_boot(nvObj_t *nv)
 {
@@ -223,22 +223,22 @@ stat_t hw_run_boot(nvObj_t *nv)
 }
 
 /*
- * hw_set_hv() - set hardware version number
+ * hw_set_hv() - 设置硬件版本号 
  */
 stat_t hw_set_hv(nvObj_t *nv)
 {
 	if (nv->value > TINYG_HARDWARE_VERSION_MAX)
         return (STAT_INPUT_EXCEEDS_MAX_VALUE);
-	set_flt(nv);					// record the hardware version
-	_port_bindings(nv->value);		// reset port bindings
-	switch_init();					// re-initialize the GPIO ports
-//++++	gpio_init();				// re-initialize the GPIO ports
+	set_flt(nv);					// 记录硬件版本 
+	_port_bindings(nv->value);		// 复位端口绑定 
+	switch_init();					// 重新初始化GPIO端口
+//++++	gpio_init();				// 重新初始化GPIO端口 
 	return (STAT_OK);
 }
 
 /***********************************************************************************
- * TEXT MODE SUPPORT
- * Functions to print variables from the cfgArray table
+ * 文本模式支持 
+ * 包含从cfgArray 表格中输出值的函数
  ***********************************************************************************/
 
 #ifdef __TEXT_MODE
