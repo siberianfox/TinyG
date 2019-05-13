@@ -51,13 +51,13 @@
 #endif
 
 /***********************************************************************************
- **** STRUCTURE ALLOCATIONS *********************************************************
+ **** 结构体分配 ********************************************************************
  ***********************************************************************************/
 
-controller_t cs;		// controller state structure
+controller_t cs;		// 控制器状态结构体 
 
 /***********************************************************************************
- **** STATICS AND LOCALS ***********************************************************
+ **** 静态和本地函数 ****************************************************************
  ***********************************************************************************/
 
 static void _controller_HSM(void);
@@ -77,20 +77,20 @@ stat_t hardware_bootloader_handler(void);
  **** CODE *************************************************************************
  ***********************************************************************************/
 /*
- * controller_init() - controller init
+ * controller_init() - 控制器初始化 
  */
 
 void controller_init(uint8_t std_in, uint8_t std_out, uint8_t std_err)
 {
-	memset(&cs, 0, sizeof(controller_t));			// clear all values, job_id's, pointers and status
+	memset(&cs, 0, sizeof(controller_t));			// 清除所有值，jobid，指针和状态
 	controller_init_assertions();
 
 	cs.fw_build = TINYG_FIRMWARE_BUILD;
 	cs.fw_version = TINYG_FIRMWARE_VERSION;
-	cs.hw_platform = TINYG_HARDWARE_PLATFORM;		// NB: HW version is set from EEPROM
+	cs.hw_platform = TINYG_HARDWARE_PLATFORM;		// NB: 硬件版本从EEPROM中设置 
 
 #ifdef __AVR
-	cs.state = CONTROLLER_STARTUP;					// ready to run startup lines
+	cs.state = CONTROLLER_STARTUP;					// 准备好运行起始行了
 	xio_set_stdin(std_in);
 	xio_set_stdout(std_out);
 	xio_set_stderr(std_err);
@@ -106,7 +106,7 @@ void controller_init(uint8_t std_in, uint8_t std_out, uint8_t std_err)
 
 /*
  * controller_init_assertions()
- * controller_test_assertions() - check memory integrity of controller
+ * controller_test_assertions() - 为控制器检查内存完整性 
  */
 
 void controller_init_assertions()
@@ -122,22 +122,19 @@ stat_t controller_test_assertions()
 }
 
 /*
- * controller_run() - MAIN LOOP - top-level controller
+ * controller_run() - 主循环 —— 顶层控制器 
  *
- * The order of the dispatched tasks is very important.
- * Tasks are ordered by increasing dependency (blocking hierarchy).
- * Tasks that are dependent on completion of lower-level tasks must be
- * later in the list than the task(s) they are dependent upon.
+ * 分发任务的顺序是非常重要的。
+ * 通过增加依赖性（阻塞层次结构）来排序任务。
+ * 依赖于更底层任务的完成的任务在列表中必须排在他们所依赖的任务的后面。
  *
- * Tasks must be written as continuations as they will be called repeatedly,
- * and are called even if they are not currently active.
+ * 任务必须写成连续的模式，因为它们会被重复地调用，即使他们在当前都没有实际的生效。
  *
- * The DISPATCH macro calls the function and returns to the controller parent
- * if not finished (STAT_EAGAIN), preventing later routines from running
- * (they remain blocked). Any other condition - OK or ERR - drops through
- * and runs the next routine in the list.
+ * DISPATAH 宏调用函数并在函数返回STAT_EAGAIN（未完成）的时候返回controller主体。
+ * 以阻止后面的函数被执行（它们仍然处于堵塞状态）在其它情况下- OK 或者 ERR ，抛弃并
+ * 执行列表下面的函数
  *
- * A routine that had no action (i.e. is OFF or idle) should return STAT_NOOP
+ * 一个没有动作的函数必须返回(STAT_NOOP)，例如OFF或者idle
  */
 
 void controller_run()
@@ -153,10 +150,10 @@ static void _controller_HSM()
 //----- Interrupt Service Routines are the highest priority controller functions ----//
 //      See hardware.h for a list of ISRs and their priorities.
 //
-//----- kernel level ISR handlers ----(flags are set in ISRs)------------------------//
-												// Order is important:
-	DISPATCH(hw_hard_reset_handler());			// 1. handle hard reset requests
-	DISPATCH(hw_bootloader_handler());			// 2. handle requests to enter bootloader
+//----- 核心层中断处理器 ----(标志都是在中断中设置的)------------------------//
+												// 顺序很重要:
+	DISPATCH(hw_hard_reset_handler());			// 1. 处理硬件复位请求 
+	DISPATCH(hw_bootloader_handler());			// 2. 处理进入bootloader请求
 	DISPATCH(_shutdown_idler());				// 3. idle in shutdown state
 //	DISPATCH( poll_switches());					// 4. run a switch polling cycle
 	DISPATCH(_limit_switch_handler());			// 5. limit switch has been thrown
@@ -165,7 +162,7 @@ static void _controller_HSM()
 	DISPATCH(mp_plan_hold_callback());			// 6b. plan a feedhold from line runtime
 	DISPATCH(_system_assertions());				// 7. system integrity assertions
 
-//----- planner hierarchy for gcode and cycles ---------------------------------------//
+//----- G代码和循环的规划器结构 ---------------------------------------//
 
 	DISPATCH(st_motor_power_callback());		// stepper motor power sequencing
 //	DISPATCH(switch_debounce_callback());		// debounce switches
@@ -180,22 +177,22 @@ static void _controller_HSM()
 
 //----- command readers and parsers --------------------------------------------------//
 
-	DISPATCH(_sync_to_planner());				// ensure there is at least one free buffer in planning queue
+	DISPATCH(_sync_to_planner());				// 确保规划队列中这里至少有一个空余的缓冲
 	DISPATCH(_sync_to_tx_buffer());				// sync with TX buffer (pseudo-blocking)
 #ifdef __AVR
-	DISPATCH(set_baud_callback());				// perform baud rate update (must be after TX sync)
+	DISPATCH(set_baud_callback());				// 执行波特率更新（必须在TX SYNC后面）
 #endif
-	DISPATCH(_command_dispatch());				// read and execute next command
+	DISPATCH(_command_dispatch());				// 读取并执行下一条命令 
 	DISPATCH(_normal_idler());					// blink LEDs slowly to show everything is OK
 }
 
 /*****************************************************************************
- * _command_dispatch() - dispatch line received from active input device
+ * _command_dispatch() - 分发从实际输入设备中接收到的行数据
  *
- *	Reads next command line and dispatches to relevant parser or action
- *	Accepts commands if the move queue has room - EAGAINS if it doesn't
- *	Manages cutback to serial input from file devices (EOF)
- *	Also responsible for prompts and for flow control
+ *  读取下一个命令行并分发到相关的解析器并执行。
+ *  当运动队列中有空间的时候接收命令,当没有空间的时候返回EAGAINS。
+ *  管理EOF截断。
+ *  同时也有协助流控制的功能
  */
 
 static stat_t _command_dispatch()
@@ -203,21 +200,21 @@ static stat_t _command_dispatch()
 #ifdef __AVR
 	stat_t status;
 
-	// read input line or return if not a completed line
-	// xio_gets() is a non-blocking workalike of fgets()
+	// 读取输入行并在当前不是完整行的时候返回
+	// xio_gets() 是一个非堵塞，类fgets()的函数
 	while (true) {
 		if ((status = xio_gets(cs.primary_src, cs.in_buf, sizeof(cs.in_buf))) == STAT_OK) {
 			cs.bufp = cs.in_buf;
 			break;
 		}
-		// handle end-of-file from file devices
-		if (status == STAT_EOF) {						// EOF can come from file devices only
+		// 从file devices中处理 end-of-line
+		if (status == STAT_EOF) {						// EOF 只能源于文件设备(file devices)
 			if (cfg.comm_mode == TEXT_MODE) {
 				fprintf_P(stderr, PSTR("End of command file\n"));
 			} else {
-				rpt_exception(STAT_EOF);				// not really an exception
+				rpt_exception(STAT_EOF);				// 不是一个真正的异常
 			}
-			tg_reset_source();							// reset to default source
+			tg_reset_source();							// 复位到默认的源
 		}
 		return (status);								// Note: STAT_EAGAIN, errors, etc. will drop through
 	}
@@ -247,7 +244,7 @@ static stat_t _command_dispatch()
 	cs.read_index = 0;
 #endif // __ARM
 
-	// set up the buffers
+	// 设置缓冲
 	cs.linelen = strlen(cs.in_buf)+1;					// linelen only tracks primary input
 	strncpy(cs.saved_buf, cs.bufp, SAVED_BUFFER_LEN-1);	// save input buffer for reporting
 
@@ -290,8 +287,8 @@ static stat_t _command_dispatch()
 
 /**** Local Utilities ********************************************************/
 /*
- * _shutdown_idler() - blink rapidly and prevent further activity from occurring
- * _normal_idler() - blink Indicator LED slowly to show everything is OK
+ * _shutdown_idler() - 快速闪烁并阻止更多的操作发生
+ * _normal_idler() -   缓慢闪烁指示LED指示一切都OK
  *
  *	Shutdown idler flashes indicator LED rapidly to show everything is not OK.
  *	Shutdown idler returns EAGAIN causing the control loop to never advance beyond
@@ -307,7 +304,7 @@ static stat_t _shutdown_idler()
 		cs.led_timer = SysTickTimer_getValue() + LED_ALARM_TIMER;
 		IndicatorLed_toggle();
 	}
-	return (STAT_EAGAIN);	// EAGAIN prevents any lower-priority actions from running
+	return (STAT_EAGAIN);	// EAGAIN 阻止其它更低优先级的任务被执行
 }
 
 static stat_t _normal_idler()
@@ -408,7 +405,7 @@ static stat_t _sync_to_time()
 }
 */
 /*
- * _limit_switch_handler() - shut down system if limit switch fired
+ * _limit_switch_handler() - 当限位开关触发的时候，关闭系统 
  */
 static stat_t _limit_switch_handler(void)
 {
@@ -420,7 +417,7 @@ static stat_t _limit_switch_handler(void)
 }
 
 /*
- * _system_assertions() - check memory integrity and other assertions
+ * _system_assertions() - 测试内存完整性和其他校验
  */
 #define emergency___everybody_to_get_from_street(a) if((status_code=a) != STAT_OK) return (cm_hard_alarm(status_code));
 

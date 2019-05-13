@@ -24,12 +24,13 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/* Switch Modes
+/* 开关模式 
  *
- *	The switches are considered to be homing switches when machine_state is
- *	MACHINE_HOMING. At all other times they are treated as limit switches:
- *	  - Hitting a homing switch puts the current move into feedhold
- *	  - Hitting a limit switch causes the machine to shut down and go into lockdown until reset
+ *  开关模式在返回原点的时候（machine_state 是 MACHINE_HOMING的时候）被当作原点开关。
+ *  在其他时候，被当作限位开关。
+ *    - 碰到原点开关的时候，将当前运动设置为进给保持
+ * 	  - 碰到限位开关的时候，会导致机器关闭并进入锁定状态，直到复位
+ *  通常情况下
  *
  * 	The normally open switch modes (NO) trigger an interrupt on the falling edge
  *	and lockout subsequent interrupts for the defined lockout period. This approach
@@ -51,16 +52,16 @@
 static void _switch_isr_helper(uint8_t sw_num);
 
 /*
- * switch_init() - initialize homing/limit switches
+ * switch_init() - 初始化原点/限位开关 
  *
- *	This function assumes sys_init() and st_init() have been run previously to
- *	bind the ports and set bit IO directions, repsectively. See system.h for details
+ *  该函数假设sys_init()和st_init()已经在调用前运行过以绑定端口和设置IO方向位。system.h有详细
+ *  介绍。
  */
 /* Note: v7 boards have external strong pullups on GPIO2 pins (2.7K ohm).
  *	v6 and earlier use internal pullups only. Internal pullups are set
  *	regardless of board type but are extraneous for v7 boards.
  */
-#define PIN_MODE PORT_OPC_PULLUP_gc				// pin mode. see iox192a3.h for details
+#define PIN_MODE PORT_OPC_PULLUP_gc				// 引脚模式. 查看 iox192a3.h 里的详情
 //#define PIN_MODE PORT_OPC_TOTEM_gc			// alternate pin mode for v7 boards
 
 void switch_init(void)
@@ -69,13 +70,13 @@ void switch_init(void)
 		// old code from when switches fired on one edge or the other:
 		//	uint8_t int_mode = (sw.switch_type == SW_TYPE_NORMALLY_OPEN) ? PORT_ISC_FALLING_gc : PORT_ISC_RISING_gc;
 
-		// setup input bits and interrupts (previously set to inputs by st_init())
+		// 设置输入位和中断 (在st_init()中设置为输入了by st_init())
 		if (sw.mode[MIN_SWITCH(i)] != SW_MODE_DISABLED) {
 			hw.sw_port[i]->DIRCLR = SW_MIN_BIT_bm;		 	// set min input - see 13.14.14
 			hw.sw_port[i]->PIN6CTRL = (PIN_MODE | PORT_ISC_BOTHEDGES_gc);
 			hw.sw_port[i]->INT0MASK = SW_MIN_BIT_bm;	 	// interrupt on min switch
 		} else {
-			hw.sw_port[i]->INT0MASK = 0;	 				// disable interrupt
+			hw.sw_port[i]->INT0MASK = 0;	 				// 关闭中断 
 		}
 		if (sw.mode[MAX_SWITCH(i)] != SW_MODE_DISABLED) {
 			hw.sw_port[i]->DIRCLR = SW_MAX_BIT_bm;		 	// set max input - see 13.14.14
@@ -84,8 +85,8 @@ void switch_init(void)
 		} else {
 			hw.sw_port[i]->INT1MASK = 0;
 		}
-		// set interrupt levels. Interrupts must be enabled in main()
-		hw.sw_port[i]->INTCTRL = GPIO1_INTLVL;				// see gpio.h for setting
+		// 设置中断优先级。中断必须在main()中使能
+		hw.sw_port[i]->INTCTRL = GPIO1_INTLVL;				// 查看gpio.h的设置
 	}
 	reset_switches();
 }
@@ -269,7 +270,7 @@ static const char *const msg_sw[] PROGMEM = { msg_sw0, msg_sw1, msg_sw2, msg_sw3
 
 #endif
 
-/*============== G2 switch code - completely different, for now ===================
+/*============== G2 开关代码 - 和当前的完全不一样 ===================
 
 #include "tinyg2.h"
 #include "switch.h"

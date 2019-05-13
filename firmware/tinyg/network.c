@@ -30,6 +30,10 @@
  *	Basic operation of RS485 on the TinyG hardware has been verified
  *	using what's in this file, but you won;t find much more.
  */
+/* 这个模组现在还只是一个占位作用的东西，而没有真正实用起来。
+*  Networking 意思是一个规划好的RS485广播网络，用于支持多板配置和外部RS485
+*
+*/
 
 #include <util/delay.h>				// for tests
 

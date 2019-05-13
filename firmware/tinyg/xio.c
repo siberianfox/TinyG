@@ -16,37 +16,37 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/* ----- XIO - Xmega Device System ----
+/* ----- XIO - Xmega Device 系统----
  *
- * XIO provides common access to native and derived xmega devices (see table below)
- * XIO devices are compatible with avr-gcc stdio and also provide some special functions
- * that are not found in stdio.
+ * XIO提供了通用访问接口，访问包括原生和衍生的xmega设备(查看下表)
+ * XIO是和avr-gcc stdio兼容的，且提供了一些在stdio中没有的功能。
  *
- * Stdio support:
+ * Stdio 支持：
  *	- http://www.nongnu.org/avr-libc/user-manual/group__avr__stdio.html
- * 	- Stdio compatible putc() and getc() functions provided for each device
- *	- This enables fgets, printf, scanf, and other stdio functions
- * 	- Full support for formatted printing is provided (including floats)
- * 	- Assignment of a default device to stdin, stdout & stderr is provided
- *	- printf() and printf_P() send to stdout, so use fprintf() to stderr
- *		for things that should't go over RS485 in SLAVE mode
- *
- * Facilities provided beyond stdio:
- *	- Supported devices include:
- *		- USB (derived from USART)
- *		- RS485 (derived from USART)
- *		- SPI devices and slave channels
- *		- Program memory "files" (read only)
- *	- Stdio FILE streams are managed as bindings to the above devices
- *	- Additional functions provided include:
- *		- open() - initialize parameters, addresses and flags
- *		- gets() - non-blocking input line reader - extends fgets
- *		- ctrl() - ioctl-like knockoff for setting device parameters (flags)
- *		- signal handling: interrupt on: feedhold, cycle_start, ctrl-x software reset
- *		- interrupt buffered RX and TX functions
- *		- XON/XOFF software flow control
+ *  - 为每个设备提供了Stdio兼容的putc()和getc()函数
+ *  - 它提供了fgets，printf，scanf，和其它的stdio函数
+ *  - 提供了所有格式化输出（包括浮点数）
+ *  - 支持分配默认设备到stdin，stdout，和stderr。
+ *  - 支持printf()和printf_P()发送到stdout，因此可以使用fprintf()到stderr发送
+ *    那些不应该在SLAVE模式通过RS485的数据
+ * 
+ * 现在提供了一下stdio外的设备：
+ *  - 支持的设备包括：
+ *     - USB (从USART衍生)
+ *     - RS485(从USART衍生)
+ *     - SPI设备和从通道
+ *     - 编程内存 “文件” （只读）
+ *  - Stdio FILE 数据流都是以绑定到以上设备来管理的
+ *  - 其它的功能还有：
+ *     - open()  - 初始化参数，地址和，标志
+ *     - gets()  - 非堵塞输入行读取器 - 扩展fgets
+ *	   - ctrl() - ioctl-like knockoff for setting device parameters (flags)
+ *     - 信号处理：在进给保持，循环开始，ctrl-x软件复位中中断
+ *     - 中断缓冲RX和TX功能
+ *     - XON/XOFF软件流控制
+ * 
  */
-/* ----- XIO - Some Internals ----
+/* ----- XIO - 一些内部细节 ----
  *
  * XIO layers are: (1) xio virtual device (root), (2) xio device type, (3) xio devices
  *
@@ -141,7 +141,7 @@ uint8_t xio_test_assertions()
 }
 
 /*
- * xio_isbusy() - return TRUE if XIO sub-system is busy
+ * xio_isbusy() - 如果XIO 子系统繁忙则返回真
  *
  *	This function is here so that the caller can detect that the serial system is active
  *	and therefore generating interrupts. This is a hack for the earlier AVRs that require

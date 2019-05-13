@@ -24,8 +24,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/* util contains a dog's breakfast of supporting functions that are not specific to tinyg:
- * including:
+/* util 包含了一些乱七八糟，不是特定用于tinyg的功能：
+ * 包含了：
  *	  - math and min/max utilities and extensions
  *	  - vector manipulation utilities
  */
@@ -196,7 +196,7 @@ char_t *escape_string(char_t *dst, char_t *src)
 }
 
 /*
- * pstr2str() - return an AVR style progmem string as a RAM string. No effect on ARMs
+ * pstr2str() - 以内存字符串形式返回一个AVR风格的程序存储字符串,在ARM中不生效
  *
  *	This function deals with FLASH memory string confusion between the AVR serias and ARMs.
  *	AVRs typically have xxxxx_P() functions which take strings from FLASH as args.
@@ -220,7 +220,7 @@ char_t *pstr2str(const char *pgm_string)
 /*
  * fntoa() - return ASCII string given a float and a decimal precision value
  *
- *	Returns length of string, less the terminating NUL character
+ *  返回字符串长度，减去终止字符NUL
  */
 char_t fntoa(char_t *str, float n, uint8_t precision)
 {
@@ -245,7 +245,7 @@ char_t fntoa(char_t *str, float n, uint8_t precision)
 }
 
 /*
- * compute_checksum() - calculate the checksum for a string
+ * compute_checksum() - 计算一个字符串的校验和 
  *
  *	Stops calculation on null termination or length value if non-zero.
  *
@@ -266,7 +266,7 @@ uint16_t compute_checksum(char_t const *string, const uint16_t length)
 }
 
 /*
- * SysTickTimer_getValue() - this is a hack to get around some compatibility problems
+ * SysTickTimer_getValue() - 这个是一个解决一些兼容性的方法
  */
 
 #ifdef __AVR

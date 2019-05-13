@@ -29,21 +29,21 @@
 #ifndef PLANNER_H_ONCE
 #define PLANNER_H_ONCE
 
-#include "canonical_machine.h"	// used for GCodeState_t
+#include "canonical_machine.h"	// 使用到里面的 GCodeState_t
 /*
 #ifdef __cplusplus
 extern "C"{
 #endif
 */
-enum moveType {				// bf->move_type values
+enum moveType {				// bf->move_type 值
 	MOVE_TYPE_NULL = 0,		// null move - does a no-op
-	MOVE_TYPE_ALINE,		// acceleration planned line
-	MOVE_TYPE_DWELL,		// delay with no movement
-	MOVE_TYPE_COMMAND,		// general command
-	MOVE_TYPE_TOOL,			// T command
-	MOVE_TYPE_SPINDLE_SPEED,// S command
-	MOVE_TYPE_STOP,			// program stop
-	MOVE_TYPE_END			// program end
+	MOVE_TYPE_ALINE,		// 加速度已规划的线段 
+	MOVE_TYPE_DWELL,		// 处理非运动 
+	MOVE_TYPE_COMMAND,		// 普通命令 
+	MOVE_TYPE_TOOL,			// T 命令 
+	MOVE_TYPE_SPINDLE_SPEED,// S 命令
+	MOVE_TYPE_STOP,			// 程序停止 
+	MOVE_TYPE_END			// 程序结束 
 };
 
 enum moveState {
@@ -54,9 +54,9 @@ enum moveState {
 };
 
 enum moveSection {
-	SECTION_HEAD = 0,		// acceleration
-	SECTION_BODY,			// cruise
-	SECTION_TAIL			// deceleration
+	SECTION_HEAD = 0,		// 加速 
+	SECTION_BODY,			// 巡航
+	SECTION_TAIL			// 减速
 };
 #define SECTIONS 3
 
@@ -67,7 +67,7 @@ enum sectionState {
 	SECTION_2nd_HALF		// second half of S curve or running a BODY (cruise)
 };
 
-/*** Most of these factors are the result of a lot of tweaking. Change with caution.***/
+/*** 大部分因子都是大量设计考虑后的结果。更改的时候要小心***/
 
 #define ARC_SEGMENT_LENGTH      ((float)0.1)		// Arc segment size (mm).(0.03)
 #define MIN_ARC_RADIUS          ((float)0.1)

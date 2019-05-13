@@ -25,9 +25,11 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-* 	This module provides the low-level stepper drivers and some related functions.
+/* 	This module provides the low-level stepper drivers and some related functions.
  *	See stepper.h for a detailed explanation of this module.
  */
+/*这个模块提供了底层步进电机驱动和一些相关的功能。stepper.h提供了相关的详细说明。
+*/
 
 #include "tinyg.h"
 #include "config.h"
@@ -39,13 +41,13 @@
 #include "text_parser.h"
 #include "util.h"
 
-/**** Allocate structures ****/
+/**** 分配机构体 ****/
 
 stConfig_t st_cfg;
 stPrepSingleton_t st_pre;
 static stRunSingleton_t st_run;
 
-/**** Setup local functions ****/
+/**** 设置静态函数 ****/
 
 static void _load_move(void);
 static void _request_load_move(void);
@@ -53,25 +55,27 @@ static void _request_load_move(void);
 static void _set_motor_power_level(const uint8_t motor, const float power_level);
 #endif
 
-// handy macro
+// 便利的宏定义
 #define _f_to_period(f) (uint16_t)((float)F_CPU / (float)f)
 
-/**** Setup motate ****/
+/**** 设置 motate ****/
+//motate 是一个便于移植TinyG的组件，现在这里还没使用
 
 #ifdef __ARM
 #endif // __ARM
 
 /************************************************************************************
- **** CODE **************************************************************************
+ **** 代码 **************************************************************************
  ************************************************************************************/
 /*
- * stepper_init() - initialize stepper motor subsystem
+ * stepper_init() - 初始化步进电机子系统 
  *
- *	Notes:
- *	  - This init requires sys_init() to be run beforehand
- * 	  - microsteps are setup during config_init()
- *	  - motor polarity is setup during config_init()
- *	  - high level interrupts must be enabled in main() once all inits are complete
+ *  注意:
+ *    -这个初始化需要在sys_init()后面运行
+ *    -细分是在config_init()中进行设置的
+ *    -电机极性实在config_init()中进行设置的 
+ * 	  -高等级中断必须在所有初始化都完成后，在main()中进行使能
+ * 
  */
 /*	NOTE: This is the bare code that the Motate timer calls replace.
  *	NB: requires: #include <component_tc.h>
@@ -87,43 +91,43 @@ static void _set_motor_power_level(const uint8_t motor, const float power_level)
 
 void stepper_init()
 {
-	memset(&st_run, 0, sizeof(st_run));			// clear all values, pointers and status
+	memset(&st_run, 0, sizeof(st_run));			// 清除所有值，指针和状态 
 	stepper_init_assertions();
 
 #ifdef __AVR
-	// Configure virtual ports
+	// 配置虚拟端口 
 	PORTCFG.VPCTRLA = PORTCFG_VP0MAP_PORT_MOTOR_1_gc | PORTCFG_VP1MAP_PORT_MOTOR_2_gc;
 	PORTCFG.VPCTRLB = PORTCFG_VP2MAP_PORT_MOTOR_3_gc | PORTCFG_VP3MAP_PORT_MOTOR_4_gc;
 
-	// setup ports and data structures
+	// 设置端口和数据结构 
 	for (uint8_t i=0; i<MOTORS; i++) {
-		hw.st_port[i]->DIR = MOTOR_PORT_DIR_gm;  // sets outputs for motors & GPIO1, and GPIO2 inputs
-		hw.st_port[i]->OUT = MOTOR_ENABLE_BIT_bm;// zero port bits AND disable motor
+		hw.st_port[i]->DIR = MOTOR_PORT_DIR_gm;  // 为步进电机设置输出。GPIO1和GPIO2设置输入
+		hw.st_port[i]->OUT = MOTOR_ENABLE_BIT_bm;// 清零端口位 “以及” 除能电机
 	}
-	// setup DDA timer
-	TIMER_DDA.CTRLA = STEP_TIMER_DISABLE;		// turn timer off
+	// 设置DDA定时器 
+	TIMER_DDA.CTRLA = STEP_TIMER_DISABLE;		// 关闭定时器 
 	TIMER_DDA.CTRLB = STEP_TIMER_WGMODE;		// waveform mode
-	TIMER_DDA.INTCTRLA = TIMER_DDA_INTLVL;		// interrupt mode
+	TIMER_DDA.INTCTRLA = TIMER_DDA_INTLVL;		// 中断模式
 
-	// setup DWELL timer
-	TIMER_DWELL.CTRLA = STEP_TIMER_DISABLE;		// turn timer off
+	// 设置DWELL定时器 
+	TIMER_DWELL.CTRLA = STEP_TIMER_DISABLE;		// 关闭定时器
 	TIMER_DWELL.CTRLB = STEP_TIMER_WGMODE;		// waveform mode
-	TIMER_DWELL.INTCTRLA = TIMER_DWELL_INTLVL;	// interrupt mode
+	TIMER_DWELL.INTCTRLA = TIMER_DWELL_INTLVL;	// 中断模式
 
-	// setup software interrupt load timer
-	TIMER_LOAD.CTRLA = LOAD_TIMER_DISABLE;		// turn timer off
+	// 设置软件中断加载定时器
+	TIMER_LOAD.CTRLA = LOAD_TIMER_DISABLE;		// 关闭定时器
 	TIMER_LOAD.CTRLB = LOAD_TIMER_WGMODE;		// waveform mode
-	TIMER_LOAD.INTCTRLA = TIMER_LOAD_INTLVL;	// interrupt mode
-	TIMER_LOAD.PER = LOAD_TIMER_PERIOD;			// set period
+	TIMER_LOAD.INTCTRLA = TIMER_LOAD_INTLVL;	// 中断模式
+	TIMER_LOAD.PER = LOAD_TIMER_PERIOD;			// 设置周期
 
-	// setup software interrupt exec timer
-	TIMER_EXEC.CTRLA = EXEC_TIMER_DISABLE;		// turn timer off
+	// 设置软件中断执行定时器
+	TIMER_EXEC.CTRLA = EXEC_TIMER_DISABLE;		// 关闭定时器
 	TIMER_EXEC.CTRLB = EXEC_TIMER_WGMODE;		// waveform mode
-	TIMER_EXEC.INTCTRLA = TIMER_EXEC_INTLVL;	// interrupt mode
-	TIMER_EXEC.PER = EXEC_TIMER_PERIOD;			// set period
+	TIMER_EXEC.INTCTRLA = TIMER_EXEC_INTLVL;	// 中断模式
+	TIMER_EXEC.PER = EXEC_TIMER_PERIOD;			// 设置周期
 
 	st_pre.buffer_state = PREP_BUFFER_OWNED_BY_EXEC;
-	st_reset();									// reset steppers to known state
+	st_reset();									// 复位步进电机模块到确切的状态
 #endif // __AVR
 
 #ifdef __ARM
@@ -151,8 +155,8 @@ void stepper_init()
 }
 
 /*
- * stepper_init_assertions() - test assertions, return error code if violation exists
- * stepper_test_assertions() - test assertions, return error code if violation exists
+ * stepper_init_assertions() - 测试校验，如果存在错误则返回错误码
+ * stepper_test_assertions() - 测试校验，如果存在错误则返回错误码
  */
 
 void stepper_init_assertions()
@@ -173,11 +177,11 @@ stat_t stepper_test_assertions()
 }
 
 /*
- * st_runtime_isbusy() - return TRUE if runtime is busy:
+ * st_runtime_isbusy() - 如果runtime处于忙的时候，返回真
  *
- *	Busy conditions:
- *	- motors are running
- *	- dwell is running
+ *	繁忙状态:
+ *	- 电机正在运行中 
+ *	- dwell正在运行中
  */
 
 uint8_t st_runtime_isbusy()
@@ -197,7 +201,7 @@ void st_reset()
 	for (uint8_t motor=0; motor<MOTORS; motor++) {
 		st_pre.mot[motor].prev_direction = STEP_INITIAL_DIRECTION;
 		st_run.mot[motor].substep_accumulator = 0;	// will become max negative during per-motor setup;
-		st_pre.mot[motor].corrected_steps = 0;		// diagnostic only - no action effect
+		st_pre.mot[motor].corrected_steps = 0;		// 只用于诊断 - 没有实际的动作影响
 	}
 	mp_set_steps_to_runtime_position();
 }
@@ -213,15 +217,15 @@ stat_t st_clc(nvObj_t *nv)	// clear diagnostic counters, reset stepper prep
 }
 
 /*
- * Motor power management functions
+ * 电机电源管理功能 
  *
- * _deenergize_motor()		 - remove power from a motor
- * _energize_motor()		 - apply power to a motor
+ * _deenergize_motor()		 - 移除电机电源 
+ * _energize_motor()		 - 为电机上电 
  * _set_motor_power_level()	 - set the actual Vref to a specified power level
  *
- * st_energize_motors()		 - apply power to all motors
- * st_deenergize_motors()	 - remove power from all motors
- * st_motor_power_callback() - callback to manage motor power sequencing
+ * st_energize_motors()		 - 为所有电机上电 
+ * st_deenergize_motors()	 - 移除所有电机的电 
+ * st_motor_power_callback() - 用于管理电机电源的回调
  */
 
 static uint8_t _motor_is_enabled(uint8_t motor)
@@ -232,9 +236,9 @@ static uint8_t _motor_is_enabled(uint8_t motor)
 		case (MOTOR_2): { port = PORT_MOTOR_2_VPORT.OUT; break; }
 		case (MOTOR_3): { port = PORT_MOTOR_3_VPORT.OUT; break; }
 		case (MOTOR_4): { port = PORT_MOTOR_4_VPORT.OUT; break; }
-		default: port = 0xff;	// defaults to disabled for bad motor input value
+		default: port = 0xff;	// 错误的电机输入值将返回默认的diable状态
 	}
-	return ((port & MOTOR_ENABLE_BIT_bm) ? 0 : 1);	// returns 1 if motor is enabled (motor is actually active low)
+	return ((port & MOTOR_ENABLE_BIT_bm) ? 0 : 1);	// 返回1当电机被使能 （实际上电机是低电平有效）
 }
 
 static void _deenergize_motor(const uint8_t motor)
@@ -333,18 +337,18 @@ void st_deenergize_motors()
  *
  *	Handles motor power-down timing, low-power idle, and adaptive motor power
  */
-stat_t st_motor_power_callback() 	// called by controller
+stat_t st_motor_power_callback() 	// 由 controller 调用
 {
-	// manage power for each motor individually
+	// 单独为每个电机管理电源
 	for (uint8_t m = MOTOR_1; m < MOTORS; m++) {
 
-		// de-energize motor if it's set to MOTOR_DISABLED
+		// 除能电机，如果电机被设置到MOTOR_DISABLE
 		if (st_cfg.mot[m].power_mode == MOTOR_DISABLED) {
 			_deenergize_motor(m);
 			continue;
 		}
 
-		// energize motor if it's set to MOTOR_ALWAYS_POWERED
+		// 使能电机，如果电机被设置到MOTOR_ALWAYS_POWERED
 		if (st_cfg.mot[m].power_mode == MOTOR_ALWAYS_POWERED) {
 			if (! _motor_is_enabled(m)) _energize_motor(m);
 			continue;
@@ -381,22 +385,23 @@ stat_t st_motor_power_callback() 	// called by controller
 
 
 /******************************
- * Interrupt Service Routines *
+ * 中断服务函数 *
  ******************************/
 
-/***** Stepper Interrupt Service Routine ************************************************
- * ISR - DDA timer interrupt routine - service ticks from DDA timer
+/***** 步进电机中断服务函数 ************************************************
+ * ISR - DDA 定时器中断 - service ticks from DDA timer
  */
 
 #ifdef __AVR
 /*
  *	Uses direct struct addresses and literal values for hardware devices - it's faster than
  *	using indexed timer and port accesses. I checked. Even when -0s or -03 is used.
+ *  对硬件设备使用直接地结构体地址和字面值 - 这个比使用定时器索引和端口快
  */
 ISR(TIMER_DDA_ISR_vect)
 {
 	if ((st_run.mot[MOTOR_1].substep_accumulator += st_run.mot[MOTOR_1].substep_increment) > 0) {
-		PORT_MOTOR_1_VPORT.OUT |= STEP_BIT_bm;		// turn step bit on
+		PORT_MOTOR_1_VPORT.OUT |= STEP_BIT_bm;		// 置位脉冲step引脚 
 		st_run.mot[MOTOR_1].substep_accumulator -= st_run.dda_ticks_X_substeps;
 		INCREMENT_ENCODER(MOTOR_1);
 	}
@@ -416,7 +421,7 @@ ISR(TIMER_DDA_ISR_vect)
 		INCREMENT_ENCODER(MOTOR_4);
 	}
 
-	// pulse stretching for using external drivers.- turn step bits off
+	// 为外部驱动延伸脉冲  关闭脉冲Step位
 	PORT_MOTOR_1_VPORT.OUT &= ~STEP_BIT_bm;				// ~ 5 uSec pulse width
 	PORT_MOTOR_2_VPORT.OUT &= ~STEP_BIT_bm;				// ~ 4 uSec
 	PORT_MOTOR_3_VPORT.OUT &= ~STEP_BIT_bm;				// ~ 3 uSec
@@ -424,8 +429,8 @@ ISR(TIMER_DDA_ISR_vect)
 
 	if (--st_run.dda_ticks_downcount != 0) return;
 
-	TIMER_DDA.CTRLA = STEP_TIMER_DISABLE;				// disable DDA timer
-	_load_move();										// load the next move
+	TIMER_DDA.CTRLA = STEP_TIMER_DISABLE;				// 关闭 DDA 定时器
+	_load_move();										// 加载下一个运动
 }
 #endif // __AVR
 
@@ -499,7 +504,7 @@ MOTATE_TIMER_INTERRUPT(dda_timer_num)
 
 #endif // __ARM
 
-/***** Dwell Interrupt Service Routine **************************************************
+/***** Dwell 中断服务函数 **************************************************
  * ISR - DDA timer interrupt routine - service ticks from DDA timer
  */
 
@@ -525,9 +530,9 @@ MOTATE_TIMER_INTERRUPT(dwell_timer_num)
 #endif
 
 /****************************************************************************************
- * Exec sequencing code		- computes and prepares next load segment
- * st_request_exec_move()	- SW interrupt to request to execute a move
- * exec_timer interrupt		- interrupt handler for calling exec function
+ * 执行顺序代码		- 计算并准备下一段加载segment
+ * st_request_exec_move()	- 用于请求执行运动的开关中断
+ * exec_timer interrupt		- 调用执行函数的中断处理器
  */
 
 #ifdef __AVR
@@ -535,7 +540,7 @@ void st_request_exec_move()
 {
 	if (st_pre.buffer_state == PREP_BUFFER_OWNED_BY_EXEC) {// bother interrupting
 		TIMER_EXEC.PER = EXEC_TIMER_PERIOD;
-		TIMER_EXEC.CTRLA = EXEC_TIMER_ENABLE;				// trigger a LO interrupt
+		TIMER_EXEC.CTRLA = EXEC_TIMER_ENABLE;				// 触发一个低优先级中断 
 	}
 }
 
@@ -635,30 +640,30 @@ namespace Motate {	// Define timer inside Motate namespace
  *	 - If axis has 0 steps the direction setting can be omitted
  *	 - If axis has 0 steps the motor must not be enabled to support power mode = 1
  */
-/****** WARNING - THIS CODE IS SPECIFIC TO AVR. SEE G2 FOR ARM CODE ******/
+/****** 警告 - 这个代码是AVR特定用的代码。ARM版本的查看G2 ******/
 
 static void _load_move()
 {
-	// Be aware that dda_ticks_downcount must equal zero for the loader to run.
-	// So the initial load must also have this set to zero as part of initialization
+	// 当心dda_ticks_downcount必须在loader运行的时候等于0
+	// 所以初始加载也必须在初始化中设置到0
 	if (st_runtime_isbusy()) {
-		return;													// exit if the runtime is busy
+		return;													// 当运行时处于繁忙的时候退出
 	}
-	if (st_pre.buffer_state != PREP_BUFFER_OWNED_BY_LOADER) {	// if there are no moves to load...
+	if (st_pre.buffer_state != PREP_BUFFER_OWNED_BY_LOADER) {	// 如果没有运动需要加载....
 //		for (uint8_t motor = MOTOR_1; motor < MOTORS; motor++) {
 //			st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_START;	// ...start motor power timeouts
 //		}
 		return;
 	}
-	// handle aline loads first (most common case)
+	// 首先处理线段加载（大多数为该类型）
 	if (st_pre.move_type == MOVE_TYPE_ALINE) {
 
-		//**** setup the new segment ****
+		//**** 设置新的segment ****
 
 		st_run.dda_ticks_downcount = st_pre.dda_ticks;
 		st_run.dda_ticks_X_substeps = st_pre.dda_ticks_X_substeps;
 
-		//**** MOTOR_1 LOAD ****
+		//**** MOTOR_1 加载 ****
 
 		// These sections are somewhat optimized for execution speed. The whole load operation
 		// is supposed to take < 10 uSec (Xmega). Be careful if you mess with this.
@@ -689,19 +694,20 @@ static void _load_move()
 			}
 			SET_ENCODER_STEP_SIGN(MOTOR_1, st_pre.mot[MOTOR_1].step_sign);
 
-			// Enable the stepper and start motor power management
+			// 使能stepper 并启动电机电源管理
 			if (st_cfg.mot[MOTOR_1].power_mode != MOTOR_DISABLED) {
-				PORT_MOTOR_1_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;             // energize motor
-				st_run.mot[MOTOR_1].power_state = MOTOR_POWER_TIMEOUT_START;// set power management state
+				PORT_MOTOR_1_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;             // 使能电机 
+				st_run.mot[MOTOR_1].power_state = MOTOR_POWER_TIMEOUT_START;// 设置电源管理状态 
 			}
 
-		} else {  // Motor has 0 steps; might need to energize motor for power mode processing
+		} else {  // 电机有0个脉冲;可能需要为电源模式处理energize 电机
 			if (st_cfg.mot[MOTOR_1].power_mode == MOTOR_POWERED_IN_CYCLE) {
 				PORT_MOTOR_1_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;             // energize motor
 				st_run.mot[MOTOR_1].power_state = MOTOR_POWER_TIMEOUT_START;
 			}
 		}
 		// accumulate counted steps to the step position and zero out counted steps for the segment currently being loaded
+		// 累计脉冲计数
 		ACCUMULATE_ENCODER(MOTOR_1);
 
 #if (MOTORS >= 2)	//**** MOTOR_2 LOAD ****
@@ -835,13 +841,13 @@ static void _load_move()
 		TIMER_DDA.PER = st_pre.dda_period;
 		TIMER_DDA.CTRLA = STEP_TIMER_ENABLE;			// enable the DDA timer
 
-	// handle dwells
+	// 处理dwell 
 	} else if (st_pre.move_type == MOVE_TYPE_DWELL) {
 		st_run.dda_ticks_downcount = st_pre.dda_ticks;
 		TIMER_DWELL.PER = st_pre.dda_period;			// load dwell timer period
 		TIMER_DWELL.CTRLA = STEP_TIMER_ENABLE;			// enable the dwell timer
 
-	// handle synchronous commands
+	// 处理同步命令 
 	} else if (st_pre.move_type == MOVE_TYPE_COMMAND) {
 		mp_runtime_command(st_pre.bf);
 	}
@@ -853,13 +859,14 @@ static void _load_move()
 }
 
 /***********************************************************************************
- * st_prep_line() - Prepare the next move for the loader
+ * st_prep_line() - 为loader加载下一段运动
  *
  *	This function does the math on the next pulse segment and gets it ready for
  *	the loader. It deals with all the DDA optimizations and timer setups so that
  *	loading can be performed as rapidly as possible. It works in joint space
  *	(motors) and it works in steps, not length units. All args are provided as
  *	floats and converted to their appropriate integer types for the loader.
+ *  该函数为下一段脉冲segment做一些数学计算并准备好给loader.这使用DDA优化和定时器设置
  *
  * Args:
  *	  - travel_steps[] are signed relative motion in steps for each motor. Steps are
@@ -890,7 +897,7 @@ stat_t st_prep_line(float travel_steps[], float following_error[], float segment
 	// - ticks_X_substeps is the maximum depth of the DDA accumulator (as a negative number)
 
 	st_pre.dda_period = _f_to_period(FREQUENCY_DDA);
-	st_pre.dda_ticks = (int32_t)(segment_time * 60 * FREQUENCY_DDA);// NB: converts minutes to seconds
+	st_pre.dda_ticks = (int32_t)(segment_time * 60 * FREQUENCY_DDA);// NB:转化分钟到秒 
 	st_pre.dda_ticks_X_substeps = st_pre.dda_ticks * DDA_SUBSTEPS;
 
 	// setup motor parameters
@@ -976,7 +983,7 @@ void st_prep_command(void *bf)
 }
 
 /*
- * st_prep_dwell() 	 - Add a dwell to the move buffer
+ * st_prep_dwell() 	 - 添加dwell到移动缓冲 
  */
 
 void st_prep_dwell(float microseconds)
@@ -1054,28 +1061,28 @@ static void _set_motor_steps_per_unit(nvObj_t *nv)
 }
 
 /* PER-MOTOR FUNCTIONS
- * st_set_sa() - set motor step angle
- * st_set_tr() - set travel per motor revolution
- * st_set_mi() - set motor microsteps
- * st_set_pm() - set motor power mode
- * st_set_pl() - set motor power level
+ * st_set_sa() - 设置电机步进角 
+ * st_set_tr() - 设置电机一圈前进多少
+ * st_set_mi() - 设置电机细分
+ * st_set_pm() - 设置电机电源模式
+ * st_set_pl() - 设置电机电源等级
  */
 
-stat_t st_set_sa(nvObj_t *nv)			// motor step angle
+stat_t st_set_sa(nvObj_t *nv)			// 电机步进角 
 {
 	set_flt(nv);
 	_set_motor_steps_per_unit(nv);
 	return(STAT_OK);
 }
 
-stat_t st_set_tr(nvObj_t *nv)			// motor travel per revolution
+stat_t st_set_tr(nvObj_t *nv)			// 电机每转运行距离
 {
 	set_flu(nv);
 	_set_motor_steps_per_unit(nv);
 	return(STAT_OK);
 }
 
-stat_t st_set_mi(nvObj_t *nv)			// motor microsteps
+stat_t st_set_mi(nvObj_t *nv)			//电机细分 
 {
     uint32_t mi = (uint32_t)nv->value;
 	if ((mi != 1) && (mi != 2) && (mi != 4) && (mi != 8)) {
@@ -1131,11 +1138,11 @@ stat_t st_get_pwr(nvObj_t *nv)
 	return (STAT_OK);
 }
 
-/* GLOBAL FUNCTIONS (SYSTEM LEVEL)
+/* 全局函数 (系统层)
  *
- * st_set_mt() - set motor timeout in seconds
- * st_set_md() - disable motor power
- * st_set_me() - enable motor power
+ * st_set_mt() - 设置电机超时时间(秒)
+ * st_set_md() - 关闭电机电源
+ * st_set_me() - 使能电机电源
  *
  * Calling me or md with NULL will enable or disable all motors
  * Setting a value of 0 will enable or disable all motors
@@ -1177,13 +1184,13 @@ stat_t st_set_me(nvObj_t *nv)	// Make sure this function is not part of initiali
 }
 
 /***********************************************************************************
- * TEXT MODE SUPPORT
- * Functions to print variables from the cfgArray table
+ * 文本模式支持
+ * 用于从cfgArray表格输出变量值
  ***********************************************************************************/
 
 #ifdef __TEXT_MODE
 
-static const char msg_units0[] PROGMEM = " in";	// used by generic print functions
+static const char msg_units0[] PROGMEM = " in";	// 用于普通输出功能
 static const char msg_units1[] PROGMEM = " mm";
 static const char msg_units2[] PROGMEM = " deg";
 static const char *const msg_units[] PROGMEM = { msg_units0, msg_units1, msg_units2 };

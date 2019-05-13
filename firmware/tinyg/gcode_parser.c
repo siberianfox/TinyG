@@ -46,9 +46,9 @@ static stat_t _execute_gcode_block(void);		// Execute the gcode block
 #define EXEC_FUNC(f,v) if((uint8_t)cm.gf.v != false) { status = f(cm.gn.v);}
 
 /*
- * gc_gcode_parser() - parse a block (line) of gcode
+ * gc_gcode_parser() - 解析一块（行）代码
  *
- *	Top level of gcode parser. Normalizes block and looks for special cases
+ *  顶层g代码解析器。格式化块并寻找特殊字符
  */
 stat_t gc_gcode_parser(char_t *block)
 {
@@ -452,16 +452,16 @@ static stat_t _execute_gcode_block()
 	EXEC_FUNC(cm_spindle_override_factor, spindle_override_factor);
 	EXEC_FUNC(cm_select_tool, tool_select);					// tool_select is where it's written
 	EXEC_FUNC(cm_change_tool, tool_change);
-	EXEC_FUNC(cm_spindle_control, spindle_mode); 			// spindle on or off
+	EXEC_FUNC(cm_spindle_control, spindle_mode); 			// 主轴开或者关 
 	EXEC_FUNC(cm_mist_coolant_control, mist_coolant);
-	EXEC_FUNC(cm_flood_coolant_control, flood_coolant);		// also disables mist coolant if OFF
+	EXEC_FUNC(cm_flood_coolant_control, flood_coolant);		// 如果是OFF同时关闭mist coolant
 	EXEC_FUNC(cm_feed_rate_override_enable, feed_rate_override_enable);
 	EXEC_FUNC(cm_traverse_override_enable, traverse_override_enable);
 	EXEC_FUNC(cm_spindle_override_enable, spindle_override_enable);
 	EXEC_FUNC(cm_override_enables, override_enables);
 
 	if (cm.gn.next_action == NEXT_ACTION_DWELL) { 			// G4 - dwell
-		ritorno(cm_dwell(cm.gn.parameter));					// return if error, otherwise complete the block
+		ritorno(cm_dwell(cm.gn.parameter));					// 如果错误则返回，否则完成该block
 	}
 	EXEC_FUNC(cm_select_plane, select_plane);
 	EXEC_FUNC(cm_set_units_mode, units_mode);

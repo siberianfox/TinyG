@@ -25,31 +25,24 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/* --- Planner Notes ----
+/* --- 规划器笔记 ----
  *
- *	The planner works below the canonical machine and above the motor mapping
- *	and stepper execution layers. A rudimentary multitasking capability is
- *	implemented for long-running commands such as lines, arcs, and dwells.
- *	These functions are coded as non-blocking continuations - which are simple
- *	state machines that are re-entered multiple times until a particular
- *	operation is complete. These functions have 2 parts - the initial call,
- *	which sets up the local context, and callbacks (continuations) that are
- *	called from the main loop (in controller.c).
+ *  该规划器工作在canonical层下面，以及 motor mapping（电机映射） 层，和Stepper execution
+ * （脉冲执行层）上面。这里应用了一个基本的多任务方式来为“长运行”代码例如线段，弧线，和
+ *  dewll服务.这些函数都是以无堵塞持续的方式编码——也就是使用简单的状态机重入多次直到指定的
+ *  操作被完成。这些函数有两个部分——一个是初始化调用，用于设置本地运行上下文contex，以及
+ *  第二个回调(连续地)在controller.c中的主循环中调用。
+ * 
+ *  其中一个最重要的概念就是三个层的数据模型的分离——指的是 G代码模型(gm),规划器模型(bf 队列和mm)
+ *  以及运行时模型(mr)。这些模型分别对应设计成模型名:model，planner，runtime。
  *
- *	One important concept is isolation of the three layers of the data model -
- *	the Gcode model (gm), planner model (bf queue & mm), and runtime model (mr).
- *	These are designated as "model", "planner" and "runtime" in function names.
+ *  G代码模型属于canonical machine层并且应该由cm_xxxx()的函数来进行获取和设置。从G代码模型
+ *  中出来的数据通过在canonical machine 层中调用mp_xxx()被转化到规划器planner。
  *
- *	The Gcode model is owned by the canonical machine and should only be accessed
- *	by cm_xxxx() functions. Data from the Gcode model is transferred to the planner
- *	by the mp_xxx() functions called by the canonical machine.
- *
- *	The planner should only use data in the planner model. When a move (block)
- *	is ready for execution the planner data is transferred to the runtime model,
- *	which should also be isolated.
- *
- *	Lower-level models should never use data from upper-level models as the data
- *	may have changed and lead to unpredictable results.
+ *  规划器应该只使用规划器模型中的数据。当一个移动（块）准备好被执行的时候，规划器的数据被转化
+ *  到运行时模型，运行时模型也需要做分离工作。
+ *  
+ *  更底层的模型应该不使用更高层的数据模型，因为有可能改变了数据并导致了不可预测的结果
  */
 #include "tinyg.h"
 #include "config.h"
@@ -66,7 +59,7 @@
 extern "C"{
 #endif
 */
-// Allocate planner structures
+// 分配规划器结构体 
 
 mpBufferPool_t mb;				// move buffer queue 移动buffer队列
 mpMoveMasterSingleton_t mm;		// context for line planning 规划状态,当前规划到哪里了
@@ -227,7 +220,7 @@ stat_t mp_runtime_command(mpBuf_t *bf)
 {
 	bf->cm_func(bf->value_vector, bf->flag_vector);		// 2 vectors used by callbacks
 	if (mp_free_run_buffer())
-		cm_cycle_end();									// free buffer & perform cycle_end if planner is empty
+		cm_cycle_end();									// 释放缓冲并在planner是空的时候执行 cycle_end
 	return (STAT_OK);
 }
 

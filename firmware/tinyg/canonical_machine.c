@@ -596,8 +596,8 @@ stat_t cm_clear(nvObj_t *nv)				// clear soft alarm
 
 stat_t cm_hard_alarm(stat_t status)
 {
-	// stop the motors and the spindle
-	stepper_init();							// hard stop
+	// 停止电机和主轴
+	stepper_init();							// 硬停止 
 	cm_spindle_control(SPINDLE_OFF);
 
 	// disable all MCode functions
@@ -607,7 +607,7 @@ stat_t cm_hard_alarm(stat_t status)
 //	gpio_set_bit_off(MIST_COOLANT_BIT);		//++++ replace with exec function
 //	gpio_set_bit_off(FLOOD_COOLANT_BIT);	//++++ replace with exec function
 
-	rpt_exception(status);					// send shutdown message
+	rpt_exception(status);					// 发送关闭信息 
 	cm.machine_state = MACHINE_SHUTDOWN;
 	return (status);
 }

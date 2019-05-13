@@ -159,7 +159,7 @@ enum hwPlatform {
 #define MOTOR_PORT_DIR_gm 0x3F	// 方向设置：低6位输出，高2位输入
 //#define MOTOR_PORT_DIR_gm 0x00	// 方向设置:所有都是输入
 
-enum cfgPortBits {			// motor control port bit positions
+enum cfgPortBits {			// 电机控制端口位位置 
 	STEP_BIT_bp = 0,		// bit 0
 	DIRECTION_BIT_bp,		// bit 1
 	MOTOR_ENABLE_BIT_bp,	// bit 2

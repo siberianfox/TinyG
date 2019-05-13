@@ -25,6 +25,9 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+/*坐标运动(线性绘制)是使用经典的Bresenham DDA算法来实现的。
+*
+*/
 /*
  *	Coordinated motion (line drawing) is performed using a classic Bresenham DDA.
  *	A number of additional steps are taken to optimize interpolation and pulse train
@@ -184,19 +187,19 @@
  *	invoked from the main loop by the software interrupt, and the stepper load is
  *	invoked from the exec by another software interrupt.
  */
-/*	Control flow can be a bit confusing. This is a typical sequence for planning
- *	executing, and running an acceleration planned line:
+/*	
+ *  控制流会有一些困惑。下面是典型的规划执行和运行一个已加速度规划好的线段的顺序，
  *
- *	 1  planner.mp_aline() is called, which populates a planning buffer (bf)
- *		and back-plans any pre-existing buffers.
+ *   1  planner 层的mp_aline()被调用，该函数读取出一个缓冲(bf)并重新计算规划已有的缓冲
  *
- *	 2  When a new buffer is added _mp_queue_write_buffer() tries to invoke
- *	    execution of the move by calling stepper.st_request_exec_move().
+ *   2 当新的缓冲被添加,_mp_queue_write_buffer()尝试通过调用stepper中的st_request_move()
+ * 	   来启动该缓冲的执行
  *
- *	 3a If the steppers are running this request is ignored.
- *	 3b If the steppers are not running this will set a timer to cause an
- *		EXEC "software interrupt" that will ultimately call st_exec_move().
+ * 	 3a 如果步进电机在运行中，该请求会被忽视
+ *   3b 如果步进电机没有在运行中，将会设置定时器去启动一个EXEC定时器软件中断，该中断最终
+ *      会调用st_exec_move()
  *
+ *   4  在
  *   4  At this point a call to _exec_move() is made, either by the
  *		software interrupt from 3b, or once the steppers finish running
  *		the current segment and have loaded the next segment. In either
@@ -353,26 +356,25 @@ typedef struct cfgMotor {				// per-motor configs
 	float power_level_scaled;			// scaled to internal range - must be between 0 and 1
 } cfgMotor_t;
 
-typedef struct stConfig {				// stepper configs
+typedef struct stConfig {				// 步进电机配置 
 	float motor_power_timeout;			// seconds before setting motors to idle current (currently this is OFF)
-	cfgMotor_t mot[MOTORS];				// settings for motors 1-N
+	cfgMotor_t mot[MOTORS];				// 电机设置 1-N
 } stConfig_t;
 
-// Motor runtime structure. Used exclusively by step generation ISR (HI)
-
+// 电机运行时结构体。只用于步进脉冲生成中断（高优先级）
 typedef struct stRunMotor {				// one per controlled motor
 	uint32_t substep_increment;			// total steps in axis times substeps factor
-	int32_t substep_accumulator;		// DDA phase angle accumulator
-	uint8_t power_state;				// state machine for managing motor power
+	int32_t substep_accumulator;		// DDA 相位角累加器 
+	uint8_t power_state;				// 用于管理电机电源的状态机
 	uint32_t power_systick;				// sys_tick for next motor power state transition
 	float power_level_dynamic;			// power level for this segment of idle (ARM only)
 } stRunMotor_t;
 
-typedef struct stRunSingleton {			// Stepper static values and axis parameters
-	uint16_t magic_start;				// magic number to test memory integrity
-	uint32_t dda_ticks_downcount;		// tick down-counter (unscaled)
+typedef struct stRunSingleton {			// 步进机静态值和轴参数
+	uint16_t magic_start;				// “魔法数”用于测试内存完整性
+	uint32_t dda_ticks_downcount;		// 滴答向下计数器(unscaled)
 	uint32_t dda_ticks_X_substeps;		// ticks multiplied by scaling factor
-	stRunMotor_t mot[MOTORS];			// runtime motor structures
+	stRunMotor_t mot[MOTORS];			// 运行时电机结构体
 	uint16_t magic_end;
 } stRunSingleton_t;
 
@@ -384,7 +386,7 @@ typedef struct stPrepMotor {
 
 	// direction and direction change
 	int8_t direction;					// travel direction corrected for polarity
-	uint8_t prev_direction;				// travel direction from previous segment run for this motor
+	uint8_t prev_direction;				// 当前电机前一段segment的电机运行方向
 	int8_t step_sign;					// set to +1 or -1 for encoders
 
 	// following error correction
@@ -399,12 +401,12 @@ typedef struct stPrepMotor {
 } stPrepMotor_t;
 
 typedef struct stPrepSingleton {
-	uint16_t magic_start;				// magic number to test memory integrity
-	volatile uint8_t buffer_state;		// prep buffer state - owned by exec or loader
-	struct mpBuffer *bf;				// static pointer to relevant buffer
-	uint8_t move_type;					// move type
+	uint16_t magic_start;				// “魔法数”  用于测试内存完整性 
+	volatile uint8_t buffer_state;		// 预备缓冲状态 - 属于exec定时器或者loader定时器
+	struct mpBuffer *bf;				// 静态指针，指向相关的buffer
+	uint8_t move_type;					// 运动类型(线段运动，同步命令或者dwell)
 
-	uint16_t dda_period;				// DDA or dwell clock period setting
+	uint16_t dda_period;				// DDA或者Dwell时钟周期设置
 	uint32_t dda_ticks;					// DDA or dwell ticks for the move
 	uint32_t dda_ticks_X_substeps;		// DDA ticks scaled by substep factor
 	stPrepMotor_t mot[MOTORS];			// prep time motor structs

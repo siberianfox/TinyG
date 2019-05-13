@@ -41,12 +41,12 @@
 #include "xmega/xmega_init.h"
 
 /*
- * sys_init() - lowest level hardware init
+ * sys_init() - 最低等级硬件复位
  */
 
 void sys_init() 
 {
-	xmega_init();		// set system clock
+	xmega_init();		// 设置系统时钟 
 	sys_port_bindings(TINYG_HARDWARE_VERSION);
 }
 
@@ -84,14 +84,18 @@ uint8_t sys_read_calibration_byte(uint8_t index)
 }
 
 /*
- * sys_get_id() - get a human readable signature
+ * _get_id() - 获取一个便于用户识别的签名
  *
- *	Produces a unique deviceID based on the factory calibration data. Format is:
- *		123456-ABC
+ * 对AVR而已：
+ * 唯一设备ID是基于工厂校准数据来生成的.
+ * 		格式是：12345-ABC
  *
- *	The number part is a direct readout of the 6 digit lot number
- *	The alpha is the lo 5 bits of wafer number and XY coords in printable ASCII
- *	Refer to NVM_PROD_SIGNATURES_t in iox192a3.h for details.
+ *  数字部分是直接从6位批号码中读取出来的
+ *  字母部分是wafer number和XY coords的低5位
+ *	有关细节参考 iox192a3.h 中的NVM_PROD_SIGNATURES_t
+ *
+ * 对于ARM而言：
+ *  当前还没有实现
  */
 enum { 
 	LOTNUM0=8,  // Lot Number Byte 0, ASCII 

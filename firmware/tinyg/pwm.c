@@ -139,7 +139,7 @@ ISR(PWM2_ISR_vect)
  *	freq	- PWM频率 单位为Khz，使用浮点数保存
  *
  *	假设处于32MHz时钟
- *	Doesn't turn time on until duty cycle is set
+ *  在占空比设置之前，不开启定时器
  */
 
 stat_t pwm_set_freq(uint8_t chan, float freq)
